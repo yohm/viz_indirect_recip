@@ -7,6 +7,7 @@ export type InitialReputationMode = 'all-good' | 'random'
 export interface SimulationParameters {
   numAgents: number
   normId: string
+  actionRuleId: string
   observationProbability: number
   actionErrorProbability: number
   assessmentErrorProbability: number
@@ -19,6 +20,7 @@ export interface SimulationParameters {
 export interface DonorDecisionContext {
   donor: number
   recipient: number
+  donorViewOfSelf: Reputation
   donorViewOfRecipient: Reputation
 }
 

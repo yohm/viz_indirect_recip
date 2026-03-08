@@ -1,3 +1,4 @@
+import { getActionRuleById } from './actionRules'
 import { getNormById } from './norms'
 import type { SimulationParameters, SimulationState } from './types'
 
@@ -6,6 +7,7 @@ const DEFAULT_MAX_EVENT_LOG_SIZE = 200
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
   normId: 'stern-judging',
+  actionRuleId: 'recipient-discriminator',
   observationProbability: 0.7,
   actionErrorProbability: 0.02,
   assessmentErrorProbability: 0.02,
@@ -41,6 +43,7 @@ export function validateParameters(input: SimulationParameters): SimulationParam
   }
 
   getNormById(params.normId)
+  getActionRuleById(params.actionRuleId)
 
   params.seed = params.seed >>> 0
   return params

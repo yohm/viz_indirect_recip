@@ -6,6 +6,7 @@
   import SimulationControls from './components/SimulationControls.svelte'
   import StatsPanel from './components/StatsPanel.svelte'
   import { initializeSimulation } from './lib/sim/initialize'
+  import { ACTION_RULE_PRESETS } from './lib/sim/actionRules'
   import { NORM_PRESETS } from './lib/sim/norms'
   import { DEFAULT_PARAMETERS, validateParameters } from './lib/sim/state'
   import { computeStats } from './lib/sim/stats'
@@ -118,6 +119,7 @@
       <ControlPanel
         params={editableParams}
         norms={NORM_PRESETS}
+        actionRules={ACTION_RULE_PRESETS}
         {jsonText}
         message={feedback}
         on:change={(event) => applyParams(event.detail)}

@@ -1,3 +1,4 @@
+import { getActionRuleById } from './actionRules'
 import { appendEvent } from './events'
 import { getNormById } from './norms'
 import { createRng } from './rng'
@@ -8,10 +9,6 @@ function chooseDistinctPair(numAgents: number, randomInt: (maxExclusive: number)
   let recipient = randomInt(numAgents - 1)
   if (recipient >= donor) recipient += 1
   return [donor, recipient]
-}
-
-function defaultDonorPolicy(recipientReputation: 'G' | 'B'): Action {
-  return recipientReputation === 'G' ? 'C' : 'D'
 }
 
 function flipAction(action: Action): Action {
@@ -30,12 +27,20 @@ export interface StepResult {
 export function stepSimulation(state: SimulationState): StepResult {
   const rng = createRng(state.rngState)
   const norm = getNormById(state.params.normId)
+  const actionRule = getActionRuleById(state.params.actionRuleId)
   const numAgents = state.params.numAgents
 
   const [donor, recipient] = chooseDistinctPair(numAgents, (limit) => rng.nextInt(limit))
 
+  const donorViewOfSelf = state.imageMatrix[donor][donor]
   const donorViewOfRecipient = state.imageMatrix[donor][recipient]
-  const intendedAction = defaultDonorPolicy(donorViewOfRecipient)
+  const intendedAction = actionRule.decide({
+    donor,
+    recipient,
+    donorViewOfSelf,
+    donorViewOfRecipient,
+  })
+
   const realizedAction = rng.nextBool(state.params.actionErrorProbability) ? flipAction(intendedAction) : intendedAction
 
   const nextMatrix = state.imageMatrix.map((row) => [...row])
@@ -47,8 +52,10 @@ export function stepSimulation(state: SimulationState): StepResult {
 
     observingAgents.push(observer)
 
+    const observerViewOfDonor = nextMatrix[observer][donor]
     const observerViewOfRecipient = nextMatrix[observer][recipient]
     let donorAssessment = norm.assessDonor({
+      observerViewOfDonor,
       observerViewOfRecipient,
       realizedAction,
     })

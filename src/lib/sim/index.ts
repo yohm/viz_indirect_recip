@@ -1,5 +1,6 @@
 export * from './types'
 export * from './rng'
+export * from './actionRules'
 export * from './norms'
 export * from './events'
 export * from './initialize'

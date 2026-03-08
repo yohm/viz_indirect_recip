@@ -1,10 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
+  import type { ActionRuleDefinition } from '../lib/sim/actionRules'
   import type { NormDefinition } from '../lib/sim/norms'
   import type { InitialReputationMode, SimulationParameters } from '../lib/sim/types'
 
   export let params: SimulationParameters
   export let norms: NormDefinition[] = []
+  export let actionRules: ActionRuleDefinition[] = []
   export let jsonText = ''
   export let message = ''
 
@@ -44,6 +46,18 @@
     <select value={params.normId} on:change={(event) => update('normId', (event.currentTarget as HTMLSelectElement).value)}>
       {#each norms as norm}
         <option value={norm.id}>{norm.name}</option>
+      {/each}
+    </select>
+  </label>
+
+  <label>
+    Action rule
+    <select
+      value={params.actionRuleId}
+      on:change={(event) => update('actionRuleId', (event.currentTarget as HTMLSelectElement).value)}
+    >
+      {#each actionRules as rule}
+        <option value={rule.id}>{rule.name}</option>
       {/each}
     </select>
   </label>

@@ -17,10 +17,10 @@ The app is built with Vite + Svelte + TypeScript and runs as a static site (GitH
 
 - Binary reputations: `G` / `B`.
 - One donor and one recipient sampled each step.
-- Donor uses a simple discriminator policy: cooperate with `G`, defect with `B`.
+- Donor action is selected by a pluggable `ActionRule(self_rep, recipient_rep)`.
 - Action error can flip intended donor action.
 - Observers are sampled independently by observation probability.
-- Observers update only donor image via selected norm.
+- Observers update only donor image via selected third-order norm.
 - Assessment error can flip updated reputation.
 
 ## Install and run
@@ -44,6 +44,7 @@ npm test
 ```
 
 Current tests cover deterministic RNG behavior and deterministic stepping behavior.
+They also check self-dependent donor action rules and donor-dependent third-order norms.
 
 ## GitHub Pages deployment
 
@@ -74,6 +75,7 @@ src/
     sim/
       types.ts
       rng.ts
+      actionRules.ts
       norms.ts
       state.ts
       initialize.ts
@@ -109,10 +111,20 @@ Svelte components do not implement norm rules or state transitions.
 
 Norms are typed objects implementing `assessDonor(context)` with this context:
 
+- observer's view of donor
 - observer's view of recipient
 - realized donor action
 
 Preset norms are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). Add new norms by appending new `NormDefinition` objects.
+
+### Action-rule system
+
+Action rules are typed objects implementing `decide(context)` where context includes:
+
+- donor's view of self
+- donor's view of recipient
+
+Presets are declared in [src/lib/sim/actionRules.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/actionRules.ts), and selected via `actionRuleId` in parameters.
 
 ### Determinism and reproducibility
 
@@ -138,7 +150,6 @@ Canvas drawing is centralized in [src/lib/render/imageMatrixCanvas.ts](/Users/mu
 - No recipient reputation updates yet.
 - No gossip or transmission channel.
 - No public-reputation mode.
-- Donor strategy is fixed to simple discriminator.
 - Reputations are binary only (`G`/`B`).
 
 ## Future extensions
