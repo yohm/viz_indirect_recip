@@ -1,0 +1,151 @@
+# Indirect Reciprocity Private Reputation Simulator
+
+Browser-only interactive simulator and visualization tool for indirect reciprocity with private reputations.
+
+The app is built with Vite + Svelte + TypeScript and runs as a static site (GitHub Pages compatible).
+
+## What the app does
+
+- Configures social norm and simulation parameters.
+- Runs/pause/step/reset simulation with deterministic seeded randomness.
+- Visualizes private image matrix `imageMatrix[observer][target]` on an HTML canvas.
+- Shows summary stats (step, cooperation rate, fraction good).
+- Displays a recent interaction event log.
+- Imports/exports parameter settings as JSON.
+
+## Model assumptions (current MVP)
+
+- Binary reputations: `G` / `B`.
+- One donor and one recipient sampled each step.
+- Donor uses a simple discriminator policy: cooperate with `G`, defect with `B`.
+- Action error can flip intended donor action.
+- Observers are sampled independently by observation probability.
+- Observers update only donor image via selected norm.
+- Assessment error can flip updated reputation.
+
+## Install and run
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Tests
+
+```bash
+npm test
+```
+
+Current tests cover deterministic RNG behavior and deterministic stepping behavior.
+
+## GitHub Pages deployment
+
+### One-time GitHub setup
+
+1. Push the repository to GitHub.
+2. In GitHub repository settings, enable **Pages** and choose **GitHub Actions** as source.
+
+### Project setup details
+
+- Vite base path is configured in [vite.config.ts](/Users/murase/sandbox/viz_indirect_recip/vite.config.ts).
+- Current base is `/viz_indirect_recip/`.
+- If repository name changes, update `base` accordingly.
+
+### Deployment workflow
+
+- Workflow file: [.github/workflows/deploy-pages.yml](/Users/murase/sandbox/viz_indirect_recip/.github/workflows/deploy-pages.yml)
+- On pushes to `main`, it builds with `npm ci && npm run build` and deploys `dist/` to GitHub Pages.
+
+## Project structure
+
+```text
+src/
+  main.ts
+  App.svelte
+  app.css
+  lib/
+    sim/
+      types.ts
+      rng.ts
+      norms.ts
+      state.ts
+      initialize.ts
+      step.ts
+      stats.ts
+      events.ts
+      index.ts
+      __tests__/
+        simulation.test.ts
+    render/
+      imageMatrixCanvas.ts
+    utils/
+      json.ts
+  components/
+    ControlPanel.svelte
+    SimulationControls.svelte
+    MatrixView.svelte
+    StatsPanel.svelte
+    EventLog.svelte
+.github/
+  workflows/
+    deploy-pages.yml
+```
+
+## Architecture notes
+
+### Simulation core is UI-independent
+
+All model logic lives in plain TypeScript modules under `src/lib/sim`.
+Svelte components do not implement norm rules or state transitions.
+
+### Norm system
+
+Norms are typed objects implementing `assessDonor(context)` with this context:
+
+- observer's view of recipient
+- realized donor action
+
+Preset norms are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). Add new norms by appending new `NormDefinition` objects.
+
+### Determinism and reproducibility
+
+- Seeded xorshift32 RNG in [src/lib/sim/rng.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/rng.ts).
+- RNG internal state is stored in simulation state and advanced only by deterministic step logic.
+- Re-initializing with identical parameters and seed reproduces runs.
+
+### State flow
+
+1. `App.svelte` holds editable settings and current simulation state.
+2. Controls update editable settings only.
+3. Initialize/Reset validates settings and creates a new simulation state.
+4. Step/Run calls `stepSimulation(state)` and replaces state with returned next state.
+5. UI panels render state and computed stats.
+
+### Canvas rendering
+
+Canvas drawing is centralized in [src/lib/render/imageMatrixCanvas.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/render/imageMatrixCanvas.ts).
+`MatrixView.svelte` only passes matrix data and handles pointer interactions.
+
+## Current limitations
+
+- No recipient reputation updates yet.
+- No gossip or transmission channel.
+- No public-reputation mode.
+- Donor strategy is fixed to simple discriminator.
+- Reputations are binary only (`G`/`B`).
+
+## Future extensions
+
+- Ternary reputations (`G`/`B`/`U`).
+- Alternative donor decision rules per agent type.
+- Recipient and third-party updates in one interaction.
+- Public/private hybrid reputation layers.
+- Punishment costs/payoffs and evolutionary dynamics.
+- Event replay and trajectory export (CSV/JSONL).

@@ -1,0 +1,64 @@
+<script lang="ts">
+  import type { SimulationStats } from '../lib/sim/types'
+
+  export let stats: SimulationStats
+</script>
+
+<section class="panel">
+  <h2>Summary</h2>
+  <dl>
+    <div>
+      <dt>Step</dt>
+      <dd>{stats.step}</dd>
+    </div>
+    <div>
+      <dt>Interactions</dt>
+      <dd>{stats.interactionCount}</dd>
+    </div>
+    <div>
+      <dt>Cooperation rate</dt>
+      <dd>{(stats.cooperationRate * 100).toFixed(1)}%</dd>
+    </div>
+    <div>
+      <dt>Fraction good</dt>
+      <dd>{(stats.fractionGood * 100).toFixed(1)}%</dd>
+    </div>
+  </dl>
+</section>
+
+<style>
+  .panel {
+    background: #ffffff;
+    border: 1px solid #d9dee4;
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+  }
+
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid #edf1f6;
+    padding-bottom: 0.3rem;
+  }
+
+  dt {
+    color: #4b5563;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+</style>

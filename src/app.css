@@ -1,0 +1,58 @@
+:root {
+  font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif;
+  color: #102a43;
+  background: #f2f5f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: radial-gradient(circle at top right, #dff3f0 0%, #f2f5f8 40%);
+}
+
+#app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.2rem, 1.4vw + 0.9rem, 1.8rem);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.left-col,
+.right-col {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+button {
+  border: 1px solid #b7c4d3;
+  border-radius: 6px;
+  background: #f9fbfd;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #edf3f8;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
