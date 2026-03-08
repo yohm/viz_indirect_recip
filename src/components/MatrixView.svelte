@@ -33,7 +33,13 @@
     redraw()
   }
 
-  $: redraw()
+  $: if (canvas) {
+    // Make dependencies explicit so Svelte redraws on simulation updates.
+    imageMatrix
+    selectedObserver
+    selectedTarget
+    redraw()
+  }
 
   onMount(() => {
     if (!canvas) return
