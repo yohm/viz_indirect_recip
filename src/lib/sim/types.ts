@@ -6,8 +6,7 @@ export type InitialReputationMode = 'all-good' | 'random'
 
 export interface SimulationParameters {
   numAgents: number
-  normId: string
-  actionRuleId: string
+  socialNormId: string
   observationProbability: number
   actionErrorProbability: number
   assessmentErrorProbability: number

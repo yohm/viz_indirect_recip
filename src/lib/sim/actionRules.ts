@@ -59,10 +59,36 @@ const SELF_CONFIDENT = createActionRule(
   },
 )
 
+const LEADING_EIGHT_L1_L2 = createActionRule(
+  'leading-eight-l1-l2',
+  'Leading Eight L1/L2 Action',
+  'Cooperate for (G,G), (B,G), and (B,B); defect for (G,B).',
+  {
+    'G-G': 'C',
+    'G-B': 'D',
+    'B-G': 'C',
+    'B-B': 'C',
+  },
+)
+
+const LEADING_EIGHT_L3_TO_L8 = createActionRule(
+  'leading-eight-l3-l8',
+  'Leading Eight L3-L8 Action',
+  'Cooperate for (G,G) and (B,G); defect for (G,B) and (B,B).',
+  {
+    'G-G': 'C',
+    'G-B': 'D',
+    'B-G': 'C',
+    'B-B': 'D',
+  },
+)
+
 export const ACTION_RULE_PRESETS: ActionRuleDefinition[] = [
   RECIPIENT_DISCRIMINATOR,
   SELF_CONSCIOUS,
   SELF_CONFIDENT,
+  LEADING_EIGHT_L1_L2,
+  LEADING_EIGHT_L3_TO_L8,
 ]
 
 export function getActionRuleById(actionRuleId: string): ActionRuleDefinition {

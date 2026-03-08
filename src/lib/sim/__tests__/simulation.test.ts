@@ -65,7 +65,7 @@ describe('simulation step', () => {
       actionErrorProbability: 0,
       assessmentErrorProbability: 0,
       initialReputationMode: 'random',
-      actionRuleId: 'self-conscious',
+      socialNormId: 'self-conscious',
     })
 
     const initial = initializeSimulation(params)

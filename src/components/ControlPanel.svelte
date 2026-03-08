@@ -1,12 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type { ActionRuleDefinition } from '../lib/sim/actionRules'
-  import type { NormDefinition } from '../lib/sim/norms'
+  import type { SocialNormDefinition } from '../lib/sim/socialNormPresets'
   import type { InitialReputationMode, SimulationParameters } from '../lib/sim/types'
 
   export let params: SimulationParameters
-  export let norms: NormDefinition[] = []
-  export let actionRules: ActionRuleDefinition[] = []
+  export let socialNormPresets: SocialNormDefinition[] = []
   export let jsonText = ''
   export let message = ''
 
@@ -42,21 +40,12 @@
   </label>
 
   <label>
-    Norm preset
-    <select value={params.normId} on:change={(event) => update('normId', (event.currentTarget as HTMLSelectElement).value)}>
-      {#each norms as norm}
-        <option value={norm.id}>{norm.name}</option>
-      {/each}
-    </select>
-  </label>
-
-  <label>
-    Action rule
+    Social norm (assessment rule + action rule)
     <select
-      value={params.actionRuleId}
-      on:change={(event) => update('actionRuleId', (event.currentTarget as HTMLSelectElement).value)}
+      value={params.socialNormId}
+      on:change={(event) => update('socialNormId', (event.currentTarget as HTMLSelectElement).value)}
     >
-      {#each actionRules as rule}
+      {#each socialNormPresets as rule}
         <option value={rule.id}>{rule.name}</option>
       {/each}
     </select>

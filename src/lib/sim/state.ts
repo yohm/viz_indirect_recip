@@ -1,13 +1,11 @@
-import { getActionRuleById } from './actionRules'
-import { getNormById } from './norms'
+import { getSocialNormById } from './socialNormPresets'
 import type { SimulationParameters, SimulationState } from './types'
 
 const DEFAULT_MAX_EVENT_LOG_SIZE = 200
 
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
-  normId: 'stern-judging',
-  actionRuleId: 'recipient-discriminator',
+  socialNormId: 'stern-judging',
   observationProbability: 0.7,
   actionErrorProbability: 0.02,
   assessmentErrorProbability: 0.02,
@@ -42,8 +40,7 @@ export function validateParameters(input: SimulationParameters): SimulationParam
     throw new Error('maxEventLogSize must be an integer between 1 and 5000.')
   }
 
-  getNormById(params.normId)
-  getActionRuleById(params.actionRuleId)
+  getSocialNormById(params.socialNormId)
 
   params.seed = params.seed >>> 0
   return params

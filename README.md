@@ -7,6 +7,7 @@ The app is built with Vite + Svelte + TypeScript and runs as a static site (GitH
 ## What the app does
 
 - Configures social norm and simulation parameters.
+- Includes bundled **Leading Eight** social-norm presets (L1-L8).
 - Runs/pause/step/reset simulation with deterministic seeded randomness.
 - Visualizes private image matrix `imageMatrix[observer][target]` on an HTML canvas.
 - Shows summary stats (step, cooperation rate, fraction good).
@@ -109,13 +110,13 @@ Svelte components do not implement norm rules or state transitions.
 
 ### Norm system
 
-Norms are typed objects implementing `assessDonor(context)` with this context:
+Assessment rules are typed objects implementing `assessDonor(context)` with this context:
 
 - observer's view of donor
 - observer's view of recipient
 - realized donor action
 
-Preset norms are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). Add new norms by appending new `NormDefinition` objects.
+Preset assessment rules are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). Add new rules by appending new `NormDefinition` objects.
 
 ### Action-rule system
 
@@ -124,7 +125,21 @@ Action rules are typed objects implementing `decide(context)` where context incl
 - donor's view of self
 - donor's view of recipient
 
-Presets are declared in [src/lib/sim/actionRules.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/actionRules.ts), and selected via `actionRuleId` in parameters.
+Presets are declared in [src/lib/sim/actionRules.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/actionRules.ts).
+
+### Social norm system
+
+In this simulator, a social norm is a pair:
+
+- assessment rule
+- action rule
+
+Named social norms are declared in [src/lib/sim/socialNormPresets.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/socialNormPresets.ts) and selected via `socialNormId` in parameters.
+
+### Leading Eight presets
+
+Published Leading Eight combinations are declared in [src/lib/sim/socialNormPresets.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/socialNormPresets.ts).
+In the UI, selecting a Leading Eight entry picks the paired assessment/action definition.
 
 ### Determinism and reproducibility
 

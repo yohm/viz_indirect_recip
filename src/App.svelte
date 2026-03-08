@@ -6,8 +6,7 @@
   import SimulationControls from './components/SimulationControls.svelte'
   import StatsPanel from './components/StatsPanel.svelte'
   import { initializeSimulation } from './lib/sim/initialize'
-  import { ACTION_RULE_PRESETS } from './lib/sim/actionRules'
-  import { NORM_PRESETS } from './lib/sim/norms'
+  import { SOCIAL_NORM_PRESETS, findSocialNormIdByPair } from './lib/sim/socialNormPresets'
   import { DEFAULT_PARAMETERS, validateParameters } from './lib/sim/state'
   import { computeStats } from './lib/sim/stats'
   import { stepSimulation } from './lib/sim/step'
@@ -92,8 +91,20 @@
 
   function importSettings(): void {
     try {
-      const parsed = parseJson<Partial<SimulationParameters>>(jsonText)
-      const merged = validateParameters({ ...DEFAULT_PARAMETERS, ...editableParams, ...parsed })
+      type LegacyImport = Partial<SimulationParameters> & { normId?: string; actionRuleId?: string }
+      const parsed = parseJson<LegacyImport>(jsonText)
+      let migratedSocialNormId = parsed.socialNormId
+
+      if (!migratedSocialNormId && parsed.normId && parsed.actionRuleId) {
+        migratedSocialNormId = findSocialNormIdByPair(parsed.normId, parsed.actionRuleId) ?? undefined
+      }
+
+      const merged = validateParameters({
+        ...DEFAULT_PARAMETERS,
+        ...editableParams,
+        ...parsed,
+        socialNormId: migratedSocialNormId ?? editableParams.socialNormId,
+      })
       editableParams = merged
       resetSimulation()
       feedback = 'Imported settings and re-initialized simulation.'
@@ -118,8 +129,7 @@
     <div class="left-col">
       <ControlPanel
         params={editableParams}
-        norms={NORM_PRESETS}
-        actionRules={ACTION_RULE_PRESETS}
+        socialNormPresets={SOCIAL_NORM_PRESETS}
         {jsonText}
         message={feedback}
         on:change={(event) => applyParams(event.detail)}
