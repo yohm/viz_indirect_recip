@@ -5,6 +5,7 @@
 
   export let params: SimulationParameters
   export let socialNormPresets: SocialNormDefinition[] = []
+  export let hasPendingChanges = false
   export let jsonText = ''
   export let message = ''
 
@@ -28,8 +29,17 @@
   }
 </script>
 
-<section class="panel">
-  <h2>Parameters</h2>
+<section class:pending={hasPendingChanges} class="panel">
+  <div class="title-row">
+    <h2>Parameters</h2>
+    {#if hasPendingChanges}
+      <span class="pending-badge">Pending changes</span>
+    {/if}
+  </div>
+
+  {#if hasPendingChanges}
+    <p class="pending-note">Click "Apply Changes" above to re-initialize the simulation with these parameter values.</p>
+  {/if}
 
   <label>
     Number of agents (N)
@@ -165,9 +175,44 @@
     padding: 1rem;
   }
 
+  .panel.pending {
+    border-color: #f0b46a;
+    box-shadow: 0 0 0 1px rgba(242, 180, 106, 0.28);
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
   h2 {
     margin: 0;
     font-size: 1rem;
+  }
+
+  .pending-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #fff2df;
+    color: #9a3412;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .pending-note {
+    margin: 0;
+    border-radius: 8px;
+    background: #fff8ee;
+    color: #9a3412;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
   }
 
   label {

@@ -25,6 +25,22 @@
 
   let feedback = ''
   let jsonText = ''
+  let hasPendingChanges = false
+
+  function areParametersEqual(a: SimulationParameters, b: SimulationParameters): boolean {
+    return (
+      a.numAgents === b.numAgents &&
+      a.socialNormId === b.socialNormId &&
+      a.assessmentMode === b.assessmentMode &&
+      a.observationProbability === b.observationProbability &&
+      a.actionErrorProbability === b.actionErrorProbability &&
+      a.assessmentErrorProbability === b.assessmentErrorProbability &&
+      a.initialReputationMode === b.initialReputationMode &&
+      a.seed === b.seed &&
+      a.autoplayStepsPerSecond === b.autoplayStepsPerSecond &&
+      a.maxEventLogSize === b.maxEventLogSize
+    )
+  }
 
   function applyParams(updated: SimulationParameters): void {
     editableParams = updated
@@ -115,6 +131,8 @@
     jsonText = value
   }
 
+  $: hasPendingChanges = !areParametersEqual(editableParams, simState.params)
+
   onDestroy(() => {
     stopLoop()
   })
@@ -123,24 +141,28 @@
 <main>
   <h1>Indirect Reciprocity Simulator</h1>
 
+  <div class="top-controls">
+    <SimulationControls
+      {running}
+      {hasPendingChanges}
+      on:reset={resetSimulation}
+      on:step={stepOnce}
+      on:toggleRun={toggleRun}
+    />
+  </div>
+
   <div class="layout">
     <div class="left-col">
       <ControlPanel
         params={editableParams}
         socialNormPresets={SOCIAL_NORM_PRESETS}
+        {hasPendingChanges}
         {jsonText}
         message={feedback}
         on:change={(event) => applyParams(event.detail)}
         on:export={exportSettings}
         on:import={importSettings}
         on:jsonChange={(event) => onJsonChange(event.detail)}
-      />
-
-      <SimulationControls
-        {running}
-        on:reset={resetSimulation}
-        on:step={stepOnce}
-        on:toggleRun={toggleRun}
       />
     </div>
 
