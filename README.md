@@ -4,6 +4,8 @@ Browser-only interactive simulator and visualization tool for indirect reciproci
 
 The app is built with Vite + Svelte + TypeScript and runs as a static site (GitHub Pages compatible).
 
+Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/viz_indirect_recip/)
+
 ## What the app does
 
 - Configures social norm and simulation parameters.
@@ -48,6 +50,8 @@ Current tests cover deterministic RNG behavior and deterministic stepping behavi
 They also check self-dependent donor action rules and donor-dependent third-order norms.
 
 ## GitHub Pages deployment
+
+Published site: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/viz_indirect_recip/)
 
 ### One-time GitHub setup
 
