@@ -48,33 +48,62 @@ export function stepSimulation(state: SimulationState): StepResult {
   const nextMatrix = state.imageMatrix.map((row) => [...row])
   const observingAgents: number[] = []
   const reputationChanges: ReputationChange[] = []
+  let assessor: number | null = null
 
-  for (let observer = 0; observer < numAgents; observer += 1) {
-    if (!rng.nextBool(state.params.observationProbability)) continue
+  if (state.params.assessmentMode === 'public') {
+    if (rng.nextBool(state.params.observationProbability)) {
+      assessor = 0
+      observingAgents.push(0)
 
-    observingAgents.push(observer)
-
-    const observerViewOfDonor = nextMatrix[observer][donor]
-    const observerViewOfRecipient = nextMatrix[observer][recipient]
-    let donorAssessment = norm.assessDonor({
-      observerViewOfDonor,
-      observerViewOfRecipient,
-      realizedAction,
-    })
-
-    if (rng.nextBool(state.params.assessmentErrorProbability)) {
-      donorAssessment = flipReputation(donorAssessment)
-    }
-
-    const previous = nextMatrix[observer][donor]
-    if (previous !== donorAssessment) {
-      nextMatrix[observer][donor] = donorAssessment
-      reputationChanges.push({
-        observer,
-        donor,
-        previous,
-        next: donorAssessment,
+      let donorAssessment = norm.assessDonor({
+        observerViewOfDonor: nextMatrix[0][donor],
+        observerViewOfRecipient: nextMatrix[0][recipient],
+        realizedAction,
       })
+
+      if (rng.nextBool(state.params.assessmentErrorProbability)) {
+        donorAssessment = flipReputation(donorAssessment)
+      }
+
+      for (let observer = 0; observer < numAgents; observer += 1) {
+        const previous = nextMatrix[observer][donor]
+        if (previous === donorAssessment) continue
+
+        nextMatrix[observer][donor] = donorAssessment
+        reputationChanges.push({
+          observer,
+          donor,
+          previous,
+          next: donorAssessment,
+        })
+      }
+    }
+  } else {
+    for (let observer = 0; observer < numAgents; observer += 1) {
+      if (!rng.nextBool(state.params.observationProbability)) continue
+
+      observingAgents.push(observer)
+
+      let donorAssessment = norm.assessDonor({
+        observerViewOfDonor: nextMatrix[observer][donor],
+        observerViewOfRecipient: nextMatrix[observer][recipient],
+        realizedAction,
+      })
+
+      if (rng.nextBool(state.params.assessmentErrorProbability)) {
+        donorAssessment = flipReputation(donorAssessment)
+      }
+
+      const previous = nextMatrix[observer][donor]
+      if (previous !== donorAssessment) {
+        nextMatrix[observer][donor] = donorAssessment
+        reputationChanges.push({
+          observer,
+          donor,
+          previous,
+          next: donorAssessment,
+        })
+      }
     }
   }
 
@@ -82,6 +111,7 @@ export function stepSimulation(state: SimulationState): StepResult {
     step: state.step + 1,
     donor,
     recipient,
+    assessor,
     intendedAction,
     realizedAction,
     observingAgents,

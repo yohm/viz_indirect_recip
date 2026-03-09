@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { drawImageMatrix, getMatrixCellAt } from '../lib/render/imageMatrixCanvas'
-  import type { Reputation } from '../lib/sim/types'
+  import type { AssessmentMode, Reputation } from '../lib/sim/types'
 
   export let imageMatrix: Reputation[][] = []
+  export let assessmentMode: AssessmentMode = 'private'
 
   let canvas: HTMLCanvasElement | null = null
   let hovered: { row: number; col: number } | null = null
@@ -52,11 +53,14 @@
 </script>
 
 <section class="panel">
-  <h2>Private Image Matrix</h2>
+  <h2>Image Matrix</h2>
   <div class="legend">
     <span><i class="good"></i> Good</span>
     <span><i class="bad"></i> Bad</span>
   </div>
+  {#if assessmentMode === 'public'}
+    <p class="note">In public assessment mode, donor columns synchronize when agent 0 observes and updates.</p>
+  {/if}
   <div class="canvas-wrap">
     <canvas bind:this={canvas} on:mousemove={onMouseMove} on:mouseleave={onMouseLeave} on:click={onClick}></canvas>
   </div>
@@ -86,6 +90,12 @@
     gap: 1rem;
     margin-bottom: 0.6rem;
     font-size: 0.85rem;
+  }
+
+  .note {
+    margin: 0 0 0.6rem;
+    font-size: 0.85rem;
+    color: #475569;
   }
 
   i {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import type { SocialNormDefinition } from '../lib/sim/socialNormPresets'
-  import type { InitialReputationMode, SimulationParameters } from '../lib/sim/types'
+  import type { AssessmentMode, InitialReputationMode, SimulationParameters } from '../lib/sim/types'
 
   export let params: SimulationParameters
   export let socialNormPresets: SocialNormDefinition[] = []
@@ -21,6 +21,10 @@
 
   function updateMode(value: string): void {
     update('initialReputationMode', value as InitialReputationMode)
+  }
+
+  function updateAssessmentMode(value: string): void {
+    update('assessmentMode', value as AssessmentMode)
   }
 </script>
 
@@ -48,6 +52,17 @@
       {#each socialNormPresets as rule}
         <option value={rule.id}>{rule.name}</option>
       {/each}
+    </select>
+  </label>
+
+  <label>
+    Assessment mode
+    <select
+      value={params.assessmentMode}
+      on:change={(event) => updateAssessmentMode((event.currentTarget as HTMLSelectElement).value)}
+    >
+      <option value="private">Private assessment</option>
+      <option value="public">Public assessment</option>
     </select>
   </label>
 

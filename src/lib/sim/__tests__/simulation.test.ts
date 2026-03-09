@@ -6,6 +6,7 @@ import { createRng } from '../rng'
 import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
 import { stepSimulation } from '../step'
+import type { Reputation, SimulationState } from '../types'
 
 function makeParams(overrides: Partial<typeof DEFAULT_PARAMETERS> = {}) {
   return validateParameters({ ...DEFAULT_PARAMETERS, ...overrides })
@@ -59,6 +60,110 @@ describe('simulation step', () => {
     expect(result.event.intendedAction).not.toBe(result.event.realizedAction)
   })
 
+  it('keeps public assessment deterministic for same initial state', () => {
+    const params = makeParams({
+      numAgents: 8,
+      seed: 19,
+      observationProbability: 0.65,
+      actionErrorProbability: 0.1,
+      assessmentErrorProbability: 0.05,
+      initialReputationMode: 'random',
+      assessmentMode: 'public',
+    })
+
+    const initialA = initializeSimulation(params)
+    const initialB = initializeSimulation(params)
+
+    const resultA = stepSimulation(initialA)
+    const resultB = stepSimulation(initialB)
+
+    expect(resultA).toEqual(resultB)
+  })
+
+  it('synchronizes the donor column in public assessment when agent 0 observes', () => {
+    const params = makeParams({
+      numAgents: 5,
+      seed: 23,
+      socialNormId: 'image-scoring',
+      observationProbability: 1,
+      actionErrorProbability: 0,
+      assessmentErrorProbability: 0,
+      assessmentMode: 'public',
+    })
+
+    const initial = initializeSimulation(params)
+    const { nextState, event } = stepSimulation(initial)
+    const donorColumn = nextState.imageMatrix.map((row) => row[event.donor])
+
+    expect(event.assessor).toBe(0)
+    expect(event.observingAgents).toEqual([0])
+    expect(new Set(donorColumn)).toEqual(new Set([donorColumn[0]]))
+  })
+
+  it('leaves the donor column unchanged in public assessment when agent 0 does not observe', () => {
+    const params = makeParams({
+      numAgents: 5,
+      seed: 31,
+      socialNormId: 'image-scoring',
+      observationProbability: 0,
+      actionErrorProbability: 0,
+      assessmentErrorProbability: 0,
+      assessmentMode: 'public',
+    })
+
+    const initial = initializeSimulation(params)
+    const beforeStep = initial.imageMatrix.map((row) => [...row])
+    const { nextState, event } = stepSimulation(initial)
+
+    expect(event.assessor).toBeNull()
+    expect(event.observingAgents).toEqual([])
+    expect(event.reputationChanges).toEqual([])
+    expect(nextState.imageMatrix).toEqual(beforeStep)
+  })
+
+  it('uses agent 0 views as the public assessment source', () => {
+    const params = makeParams({
+      numAgents: 4,
+      seed: 17,
+      socialNormId: 'leading-eight-l8',
+      observationProbability: 1,
+      actionErrorProbability: 0,
+      assessmentErrorProbability: 0,
+      assessmentMode: 'public',
+    })
+
+    const probeEvent = stepSimulation(initializeSimulation(params)).event
+    const donor = probeEvent.donor
+    const recipient = probeEvent.recipient
+    const imageMatrix: Reputation[][] = Array.from({ length: params.numAgents }, () =>
+      Array.from({ length: params.numAgents }, () => 'G'),
+    )
+
+    imageMatrix[donor][recipient] = 'B'
+    imageMatrix[0][donor] = 'B'
+    imageMatrix[0][recipient] = 'B'
+    for (let observer = 1; observer < params.numAgents; observer += 1) {
+      imageMatrix[observer][donor] = 'G'
+      imageMatrix[observer][recipient] = 'B'
+    }
+
+    const initial: SimulationState = {
+      params,
+      imageMatrix,
+      step: 0,
+      interactionCount: 0,
+      cooperationCount: 0,
+      rngState: params.seed,
+      events: [],
+    }
+
+    const { nextState, event } = stepSimulation(initial)
+    const donorColumn = nextState.imageMatrix.map((row) => row[event.donor])
+
+    expect(event.assessor).toBe(0)
+    expect(event.realizedAction).toBe('D')
+    expect(donorColumn).toEqual(Array(params.numAgents).fill('B'))
+  })
 })
 
 describe('norms', () => {
@@ -109,6 +214,12 @@ describe('norms', () => {
 })
 
 describe('canonical IDs', () => {
+  it('rejects invalid assessment modes', () => {
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, assessmentMode: 'shared' as 'private' })).toThrow(
+      'assessmentMode must be either "private" or "public".',
+    )
+  })
+
   it('uses discriminator as the canonical replacement for recipient-discriminator', () => {
     const rule = getActionRuleById('discriminator')
 

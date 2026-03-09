@@ -2,6 +2,14 @@
   import type { InteractionEvent } from '../lib/sim/types'
 
   export let events: InteractionEvent[] = []
+
+  function describeChanges(event: InteractionEvent): string {
+    if (event.reputationChanges.length === 0) {
+      return 'none'
+    }
+
+    return event.reputationChanges.map((change) => `obs ${change.observer}: ${change.previous}->${change.next}`).join(', ')
+  }
 </script>
 
 <section class="panel">
@@ -14,17 +22,19 @@
         <article>
           <header>step {event.step}: donor {event.donor} -> recipient {event.recipient}</header>
           <p>intended {event.intendedAction} / realized {event.realizedAction}</p>
-          <p>observers: {event.observingAgents.join(', ') || 'none'}</p>
-          <p>
-            changed reputations:
-            {#if event.reputationChanges.length === 0}
-              none
-            {:else}
-              {event.reputationChanges
-                .map((change) => `obs ${change.observer}: ${change.previous}->${change.next}`)
-                .join(', ')}
-            {/if}
-          </p>
+          {#if event.assessor === null}
+            <p>observers: {event.observingAgents.join(', ') || 'none'}</p>
+            <p>changed reputations: {describeChanges(event)}</p>
+          {:else}
+            <p>public observer: agent {event.assessor} {event.observingAgents.length === 0 ? '(did not observe)' : '(observed)'}</p>
+            <p>
+              public update:
+              {event.observingAgents.length === 0
+                ? 'donor reputation unchanged'
+                : `agent ${event.assessor}'s assessment was copied to all agents`}
+            </p>
+            <p>changed reputations: {describeChanges(event)}</p>
+          {/if}
         </article>
       {/each}
     {/if}

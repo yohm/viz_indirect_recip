@@ -4,9 +4,12 @@ export type Action = 'C' | 'D'
 
 export type InitialReputationMode = 'all-good' | 'random'
 
+export type AssessmentMode = 'private' | 'public'
+
 export interface SimulationParameters {
   numAgents: number
   socialNormId: string
+  assessmentMode: AssessmentMode
   observationProbability: number
   actionErrorProbability: number
   assessmentErrorProbability: number
@@ -34,6 +37,7 @@ export interface InteractionEvent {
   step: number
   donor: number
   recipient: number
+  assessor: number | null
   intendedAction: Action
   realizedAction: Action
   observingAgents: number[]

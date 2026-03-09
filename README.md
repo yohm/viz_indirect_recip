@@ -1,6 +1,6 @@
-# Indirect Reciprocity Private Reputation Simulator
+# Indirect Reciprocity Reputation Simulator
 
-Browser-only interactive simulator and visualization tool for indirect reciprocity with private reputations.
+Browser-only interactive simulator and visualization tool for indirect reciprocity with private and public assessment modes.
 
 The app is built with Vite + Svelte + TypeScript and runs as a static site (GitHub Pages compatible).
 
@@ -11,7 +11,7 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 - Configures social norm and simulation parameters.
 - Includes bundled **Leading Eight** social-norm presets (L1-L8).
 - Runs/pause/step/reset simulation with deterministic seeded randomness.
-- Visualizes private image matrix `imageMatrix[observer][target]` on an HTML canvas.
+- Visualizes the image matrix `imageMatrix[observer][target]` on an HTML canvas.
 - Shows summary stats (step, cooperation rate, fraction good).
 - Displays a recent interaction event log.
 - Imports/exports parameter settings as JSON.
@@ -25,6 +25,7 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 - Observers are sampled independently by observation probability.
 - Observers update only donor image via selected third-order norm.
 - Assessment error can flip updated reputation.
+- Public assessment mode can use `agent[0]` as a fixed observer whose judgment is copied to all agents when observation occurs.
 
 ## Install and run
 
@@ -176,7 +177,6 @@ Canvas drawing is centralized in [src/lib/render/imageMatrixCanvas.ts](/Users/mu
 
 - No recipient reputation updates yet.
 - No gossip or transmission channel.
-- No public-reputation mode.
 - Reputations are binary only (`G`/`B`).
 
 ## Future extensions

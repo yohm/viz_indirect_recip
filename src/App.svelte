@@ -115,7 +115,7 @@
 </script>
 
 <main>
-  <h1>Indirect Reciprocity (Private Reputation) Simulator</h1>
+  <h1>Indirect Reciprocity Simulator</h1>
 
   <div class="layout">
     <div class="left-col">
@@ -141,7 +141,7 @@
     </div>
 
     <div class="right-col">
-      <MatrixView imageMatrix={simState.imageMatrix} />
+      <MatrixView imageMatrix={simState.imageMatrix} assessmentMode={simState.params.assessmentMode} />
       <EventLog events={simState.events} />
     </div>
   </div>

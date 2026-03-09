@@ -6,6 +6,7 @@ const DEFAULT_MAX_EVENT_LOG_SIZE = 50
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
   socialNormId: 'leading-eight-l6',
+  assessmentMode: 'private',
   observationProbability: 1,
   actionErrorProbability: 0.0,
   assessmentErrorProbability: 0.02,
@@ -18,6 +19,9 @@ export const DEFAULT_PARAMETERS: SimulationParameters = {
 export function validateParameters(input: SimulationParameters): SimulationParameters {
   const params = { ...input }
 
+  if (params.assessmentMode !== 'private' && params.assessmentMode !== 'public') {
+    throw new Error('assessmentMode must be either "private" or "public".')
+  }
   if (!Number.isInteger(params.numAgents) || params.numAgents < 2 || params.numAgents > 500) {
     throw new Error('numAgents must be an integer between 2 and 500.')
   }
