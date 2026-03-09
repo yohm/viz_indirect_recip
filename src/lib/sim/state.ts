@@ -1,17 +1,17 @@
 import { getSocialNormById } from './socialNormPresets'
 import type { SimulationParameters, SimulationState } from './types'
 
-const DEFAULT_MAX_EVENT_LOG_SIZE = 200
+const DEFAULT_MAX_EVENT_LOG_SIZE = 50
 
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
   socialNormId: 'leading-eight-l6',
-  observationProbability: 0.7,
-  actionErrorProbability: 0.02,
+  observationProbability: 1,
+  actionErrorProbability: 0.0,
   assessmentErrorProbability: 0.02,
   initialReputationMode: 'all-good',
   seed: 42,
-  autoplayStepsPerSecond: 10,
+  autoplayStepsPerSecond: 30,
   maxEventLogSize: DEFAULT_MAX_EVENT_LOG_SIZE,
 }
 
