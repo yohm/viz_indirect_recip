@@ -5,7 +5,6 @@
 
   export let params: SimulationParameters
   export let socialNormOptions: SocialNormListItem[] = []
-  export let selectedNormDescription = ''
   export let selectedNormSource: 'preset' | 'custom' = 'preset'
   export let hasPendingChanges = false
   export let jsonText = ''
@@ -77,10 +76,6 @@
       <button type="button" on:click={() => dispatch('editSelectedNorm')}>Edit selected</button>
     {/if}
   </div>
-
-  <p class="norm-description">
-    <strong>{selectedNormSource === 'custom' ? 'Custom norm' : 'Preset norm'}:</strong> {selectedNormDescription}
-  </p>
 
   <label>
     Assessment mode
@@ -258,13 +253,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-  }
-
-  .norm-description {
-    margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.45;
-    color: #334155;
   }
 
   .message {

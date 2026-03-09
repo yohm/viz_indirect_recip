@@ -7,14 +7,12 @@ import type { CustomNormCode } from './types'
 export interface SocialNormListItem {
   id: string
   name: string
-  description: string
   source: 'preset' | 'custom'
 }
 
 export interface ResolvedSocialNorm {
   id: string
   name: string
-  description: string
   assessmentRule: NormDefinition
   actionRule: ActionRuleDefinition
   source: 'preset' | 'custom'
@@ -25,13 +23,11 @@ export function listAvailableSocialNorms(customNorms: CustomNormCode[]): SocialN
     ...SOCIAL_NORM_PRESETS.map((item) => ({
       id: item.id,
       name: item.name,
-      description: item.description,
       source: 'preset' as const,
     })),
     ...customNorms.map((code) => ({
       id: code,
       name: code,
-      description: `Custom norm ${code}`,
       source: 'custom' as const,
     })),
   ]
@@ -72,7 +68,6 @@ export function resolveSocialNorm(
     return {
       id: preset.id,
       name: preset.name,
-      description: preset.description,
       assessmentRule,
       actionRule,
       source: 'preset',
@@ -91,17 +86,14 @@ export function resolveSocialNorm(
   return {
     id: normalizedId,
     name: normalizedId,
-    description: `Custom norm ${normalizedId}`,
     assessmentRule: createNormFromTable(
       `${normalizedId}-assessment`,
       `${normalizedId} Assessment`,
-      `Assessment rule derived from ${normalizedId}.`,
       assessmentTable,
     ),
     actionRule: createActionRuleFromTable(
       `${normalizedId}-action`,
       `${normalizedId} Action`,
-      `Action rule derived from ${normalizedId}.`,
       actionTable,
     ),
     source: 'custom',

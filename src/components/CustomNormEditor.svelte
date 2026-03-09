@@ -32,17 +32,6 @@
     dispatch('save', currentCode)
   }
 
-  function assessmentSummary(): string {
-    const justifiedDefection = assessmentTable['G-B-D']
-    const helpingBadRecipient = assessmentTable['G-B-C']
-    return `Bad recipient への defection を ${justifiedDefection}、helping bad recipient を ${helpingBadRecipient} と評価します。`
-  }
-
-  function actionSummary(): string {
-    const againstBadRecipient = actionTable['G-B']
-    const badSelfAgainstBadRecipient = actionTable['B-B']
-    return `Self=G, recipient=B では ${againstBadRecipient}、self=B, recipient=B では ${badSelfAgainstBadRecipient} を選びます。`
-  }
 </script>
 
 <section class="panel">
@@ -63,7 +52,6 @@
   <section class="subsection">
     <div class="subsection-head">
       <h3>Assessment Rule</h3>
-      <p>{assessmentSummary()}</p>
     </div>
     <AssessmentRuleTable table={assessmentTable} on:change={(event) => (assessmentTable = event.detail)} />
   </section>
@@ -71,7 +59,6 @@
   <section class="subsection">
     <div class="subsection-head">
       <h3>Action Rule</h3>
-      <p>{actionSummary()}</p>
     </div>
     <ActionRuleTable table={actionTable} on:change={(event) => (actionTable = event.detail)} />
   </section>
@@ -88,8 +75,7 @@
   }
 
   .title-row,
-  .button-row,
-  .subsection-head {
+  .button-row {
     display: flex;
     align-items: start;
     justify-content: space-between;
@@ -98,8 +84,7 @@
   }
 
   h2,
-  h3,
-  p {
+  h3 {
     margin: 0;
   }
 
@@ -129,13 +114,6 @@
   .subsection {
     display: grid;
     gap: 0.7rem;
-  }
-
-  .subsection-head p {
-    max-width: 42rem;
-    font-size: 0.85rem;
-    color: #475569;
-    line-height: 1.5;
   }
 
   .danger {

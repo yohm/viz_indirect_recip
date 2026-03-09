@@ -225,7 +225,6 @@
 
   $: socialNormOptions = listAvailableSocialNorms(customSocialNorms)
   $: selectedNorm = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
-  $: selectedNormLabel = selectedNorm.source === 'custom' ? selectedNorm.id : selectedNorm.name
   $: hasPendingChanges =
     !areParametersEqual(editableParams, simState.params) ||
     !areCustomNormCollectionsEqual(customSocialNorms, appliedCustomSocialNorms)
@@ -253,7 +252,6 @@
       <ControlPanel
         params={editableParams}
         socialNormOptions={socialNormOptions}
-        selectedNormDescription={selectedNormLabel}
         selectedNormSource={selectedNorm.source}
         {hasPendingChanges}
         {jsonText}
