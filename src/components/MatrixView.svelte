@@ -116,7 +116,7 @@
   }
 
   .canvas-wrap {
-    width: min(100%, 700px);
+    width: min(100%, 490px);
     aspect-ratio: 1 / 1;
     border: 1px solid #cfd8e3;
     border-radius: 6px;
