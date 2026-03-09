@@ -9,8 +9,6 @@
 
   const dispatch = createEventDispatcher<{
     save: CustomNormCode
-    delete: { code: CustomNormCode }
-    cancel: void
   }>()
 
   const initialDecoded = decodeCustomNormCode(code)
@@ -38,9 +36,7 @@
   <div class="title-row">
     <h2>Custom Norm Editor</h2>
     <div class="button-row">
-      <button type="button" on:click={() => dispatch('cancel')}>Close</button>
-      <button type="button" on:click={save}>Save changes</button>
-      <button type="button" class="danger" on:click={() => dispatch('delete', { code })}>Delete</button>
+      <button type="button" on:click={save}>Done</button>
     </div>
   </div>
 
@@ -114,11 +110,5 @@
   .subsection {
     display: grid;
     gap: 0.7rem;
-  }
-
-  .danger {
-    border-color: #f2c6c6;
-    color: #9f1239;
-    background: #fff8f8;
   }
 </style>

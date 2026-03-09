@@ -15,8 +15,6 @@
     export: void
     import: void
     jsonChange: string
-    createCustomNorm: void
-    duplicateSelectedNorm: void
     editSelectedNorm: void
   }>()
 
@@ -70,11 +68,9 @@
   </label>
 
   <div class="norm-actions">
-    <button type="button" on:click={() => dispatch('createCustomNorm')}>Create custom</button>
-    <button type="button" on:click={() => dispatch('duplicateSelectedNorm')}>Duplicate selected</button>
-    {#if selectedNormSource === 'custom'}
-      <button type="button" on:click={() => dispatch('editSelectedNorm')}>Edit selected</button>
-    {/if}
+    <button type="button" on:click={() => dispatch('editSelectedNorm')}>
+      {selectedNormSource === 'custom' ? 'Edit custom' : 'Edit selected'}
+    </button>
   </div>
 
   <label>

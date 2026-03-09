@@ -36,7 +36,6 @@
   let jsonText = ''
   let hasPendingChanges = false
   let editingCode: CustomNormCode | null = null
-  let editingOriginalCode: CustomNormCode | null = null
 
   function cloneCustomNorms(norms: CustomNormCode[]): CustomNormCode[] {
     return norms.map((code) => normalizeCustomNormCode(code))
@@ -159,68 +158,29 @@
     jsonText = value
   }
 
-  function ensureUniqueCustomNorm(code: CustomNormCode, excludingCode: string | null = null): void {
-    const normalized = normalizeCustomNormCode(code)
-    const duplicate = customSocialNorms.some(
-      (item) => item === normalized && (excludingCode === null || item !== normalizeCustomNormCode(excludingCode)),
-    )
-    if (duplicate) {
-      throw new Error(`Custom norm code already exists: ${normalized}`)
-    }
-  }
-
-  function openEditor(code: CustomNormCode, originalCode: CustomNormCode | null): void {
+  function openEditor(code: CustomNormCode): void {
     editingCode = normalizeCustomNormCode(code)
-    editingOriginalCode = originalCode ? normalizeCustomNormCode(originalCode) : null
-  }
-
-  function createCustomNorm(): void {
-    openEditor(duplicatePresetAsCustom('image-scoring'), null)
-  }
-
-  function duplicateSelectedNorm(): void {
-    const selected = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
-    const duplicatedCode = selected.source === 'custom' ? selected.id : duplicatePresetAsCustom(selected.id)
-    openEditor(duplicatedCode, null)
   }
 
   function saveCustomNorm(updatedCode: CustomNormCode): void {
     try {
       const normalized = normalizeCustomNormCode(updatedCode)
       validateCustomSocialNormCollection([normalized])
-
-      if (editingOriginalCode === null) {
-        ensureUniqueCustomNorm(normalized)
-        customSocialNorms = [...customSocialNorms, normalized]
-      } else {
-        ensureUniqueCustomNorm(normalized, editingOriginalCode)
-        customSocialNorms = customSocialNorms.map((item) => (item === editingOriginalCode ? normalized : item))
-      }
-
+      customSocialNorms = [normalized]
       editableParams = {
         ...editableParams,
         socialNormId: normalized,
       }
-      editingCode = normalized
-      editingOriginalCode = normalized
+      editingCode = null
       feedback = `Saved custom norm ${normalized}.`
     } catch (error) {
       feedback = (error as Error).message
     }
   }
 
-  function deleteCustomNorm(code: CustomNormCode): void {
-    const normalized = normalizeCustomNormCode(code)
-    customSocialNorms = customSocialNorms.filter((item) => item !== normalized)
-    if (editableParams.socialNormId === normalized) {
-      editableParams = { ...editableParams, socialNormId: DEFAULT_PARAMETERS.socialNormId }
-    }
-    editingCode = null
-    editingOriginalCode = null
-  }
-
   function editSelectedNorm(): void {
-    openEditor(editableParams.socialNormId, editableParams.socialNormId)
+    const selected = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
+    openEditor(selected.source === 'custom' ? selected.id : duplicatePresetAsCustom(selected.id))
   }
 
   $: socialNormOptions = listAvailableSocialNorms(customSocialNorms)
@@ -260,19 +220,12 @@
         on:export={exportSettings}
         on:import={importSettings}
         on:jsonChange={(event) => onJsonChange(event.detail)}
-        on:createCustomNorm={createCustomNorm}
-        on:duplicateSelectedNorm={duplicateSelectedNorm}
         on:editSelectedNorm={editSelectedNorm}
       />
       {#if editingCode}
         <CustomNormEditor
           code={editingCode}
           on:save={(event) => saveCustomNorm(event.detail)}
-          on:delete={(event) => deleteCustomNorm(event.detail.code)}
-          on:cancel={() => {
-            editingCode = null
-            editingOriginalCode = null
-          }}
         />
       {/if}
     </div>
