@@ -34,9 +34,8 @@
 
 <section class="panel">
   <div class="title-row">
-    <h2>Custom Norm Editor</h2>
     <div class="button-row">
-      <button type="button" on:click={save}>Done</button>
+      <button type="button" on:click={save}>Apply custom norm</button>
     </div>
   </div>
 
@@ -64,22 +63,17 @@
   .panel {
     display: grid;
     gap: 0.9rem;
-    background: #ffffff;
-    border: 1px solid #d9dee4;
-    border-radius: 10px;
-    padding: 1rem;
   }
 
   .title-row,
   .button-row {
     display: flex;
     align-items: start;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.75rem;
     flex-wrap: wrap;
   }
 
-  h2,
   h3 {
     margin: 0;
   }

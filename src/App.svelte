@@ -4,6 +4,7 @@
   import CustomNormEditor from './components/CustomNormEditor.svelte'
   import EventLog from './components/EventLog.svelte'
   import MatrixView from './components/MatrixView.svelte'
+  import Modal from './components/Modal.svelte'
   import SimulationControls from './components/SimulationControls.svelte'
   import StatsPanel from './components/StatsPanel.svelte'
   import TimeSeriesChart from './components/TimeSeriesChart.svelte'
@@ -222,12 +223,6 @@
         on:jsonChange={(event) => onJsonChange(event.detail)}
         on:editSelectedNorm={editSelectedNorm}
       />
-      {#if editingCode}
-        <CustomNormEditor
-          code={editingCode}
-          on:save={(event) => saveCustomNorm(event.detail)}
-        />
-      {/if}
     </div>
 
     <div class="right-col">
@@ -242,3 +237,12 @@
     </div>
   </div>
 </main>
+
+{#if editingCode}
+  <Modal title="Custom Norm Editor" on:close={() => (editingCode = null)}>
+    <CustomNormEditor
+      code={editingCode}
+      on:save={(event) => saveCustomNorm(event.detail)}
+    />
+  </Modal>
+{/if}
