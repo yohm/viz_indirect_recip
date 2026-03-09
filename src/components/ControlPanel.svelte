@@ -1,10 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type { SocialNormDefinition } from '../lib/sim/socialNormPresets'
+  import type { SocialNormListItem } from '../lib/sim/socialNormCatalog'
   import type { AssessmentMode, InitialReputationMode, SimulationParameters } from '../lib/sim/types'
 
   export let params: SimulationParameters
-  export let socialNormPresets: SocialNormDefinition[] = []
+  export let socialNormOptions: SocialNormListItem[] = []
+  export let selectedNormDescription = ''
+  export let selectedNormSource: 'preset' | 'custom' = 'preset'
   export let hasPendingChanges = false
   export let jsonText = ''
   export let message = ''
@@ -14,6 +16,9 @@
     export: void
     import: void
     jsonChange: string
+    createCustomNorm: void
+    duplicateSelectedNorm: void
+    editSelectedNorm: void
   }>()
 
   function update<K extends keyof SimulationParameters>(key: K, value: SimulationParameters[K]): void {
@@ -59,11 +64,23 @@
       value={params.socialNormId}
       on:change={(event) => update('socialNormId', (event.currentTarget as HTMLSelectElement).value)}
     >
-      {#each socialNormPresets as rule}
-        <option value={rule.id}>{rule.name}</option>
+      {#each socialNormOptions as rule}
+        <option value={rule.id}>{rule.name}{rule.source === 'custom' ? ' [Custom]' : ''}</option>
       {/each}
     </select>
   </label>
+
+  <div class="norm-actions">
+    <button type="button" on:click={() => dispatch('createCustomNorm')}>Create custom</button>
+    <button type="button" on:click={() => dispatch('duplicateSelectedNorm')}>Duplicate selected</button>
+    {#if selectedNormSource === 'custom'}
+      <button type="button" on:click={() => dispatch('editSelectedNorm')}>Edit selected</button>
+    {/if}
+  </div>
+
+  <p class="norm-description">
+    <strong>{selectedNormSource === 'custom' ? 'Custom norm' : 'Preset norm'}:</strong> {selectedNormDescription}
+  </p>
 
   <label>
     Assessment mode
@@ -235,6 +252,19 @@
   .json-row {
     display: flex;
     gap: 0.6rem;
+  }
+
+  .norm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .norm-description {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #334155;
   }
 
   .message {

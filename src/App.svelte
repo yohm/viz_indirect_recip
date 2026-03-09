@@ -1,23 +1,31 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import ControlPanel from './components/ControlPanel.svelte'
+  import CustomNormEditor from './components/CustomNormEditor.svelte'
   import EventLog from './components/EventLog.svelte'
   import MatrixView from './components/MatrixView.svelte'
   import SimulationControls from './components/SimulationControls.svelte'
   import StatsPanel from './components/StatsPanel.svelte'
   import TimeSeriesChart from './components/TimeSeriesChart.svelte'
   import { initializeSimulation } from './lib/sim/initialize'
-  import { SOCIAL_NORM_PRESETS } from './lib/sim/socialNormPresets'
+  import {
+    duplicatePresetAsCustom,
+    listAvailableSocialNorms,
+    resolveSocialNorm,
+    validateCustomSocialNormCollection,
+  } from './lib/sim/socialNormCatalog'
   import { DEFAULT_PARAMETERS, validateParameters } from './lib/sim/state'
   import { appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from './lib/sim/stats'
   import { stepSimulation } from './lib/sim/step'
-  import type { SimulationParameters, SimulationState, TimeSeriesPoint } from './lib/sim/types'
-  import { parseJson, toPrettyJson } from './lib/utils/json'
+  import type { CustomSocialNormDefinition, SimulationParameters, SimulationState, TimeSeriesPoint } from './lib/sim/types'
+  import { normalizeSettingsDocument, parseJson, toPrettyJson, type SimulationSettingsDocument } from './lib/utils/json'
 
   const MAX_CHART_POINTS = 500
 
   let editableParams: SimulationParameters = { ...DEFAULT_PARAMETERS }
-  let simState: SimulationState = initializeSimulation(validateParameters({ ...editableParams }))
+  let customSocialNorms: CustomSocialNormDefinition[] = []
+  let appliedCustomSocialNorms: CustomSocialNormDefinition[] = []
+  let simState: SimulationState = initializeSimulation(validateParameters({ ...editableParams }, customSocialNorms))
   let stats = computeStats(simState)
   let statsHistory: TimeSeriesPoint[] = [toTimeSeriesPoint(stats)]
   let running = false
@@ -26,6 +34,21 @@
   let feedback = ''
   let jsonText = ''
   let hasPendingChanges = false
+  let editingNormId: string | null = null
+
+  function cloneCustomNorms(norms: CustomSocialNormDefinition[]): CustomSocialNormDefinition[] {
+    return norms.map((norm) => ({
+      ...norm,
+      assessmentRule: {
+        ...norm.assessmentRule,
+        table: { ...norm.assessmentRule.table },
+      },
+      actionRule: {
+        ...norm.actionRule,
+        table: { ...norm.actionRule.table },
+      },
+    }))
+  }
 
   function areParametersEqual(a: SimulationParameters, b: SimulationParameters): boolean {
     return (
@@ -42,15 +65,21 @@
     )
   }
 
+  function areCustomNormCollectionsEqual(a: CustomSocialNormDefinition[], b: CustomSocialNormDefinition[]): boolean {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+
   function applyParams(updated: SimulationParameters): void {
     editableParams = updated
   }
 
   function resetSimulation(): void {
     try {
-      const validated = validateParameters({ ...editableParams })
+      validateCustomSocialNormCollection(customSocialNorms)
+      const validated = validateParameters({ ...editableParams }, customSocialNorms)
       editableParams = validated
       simState = initializeSimulation(validated)
+      appliedCustomSocialNorms = cloneCustomNorms(customSocialNorms)
       stats = computeStats(simState)
       statsHistory = [toTimeSeriesPoint(stats)]
       feedback = `Initialized with seed ${validated.seed}.`
@@ -62,7 +91,7 @@
 
   function stepOnce(): void {
     try {
-      const { nextState } = stepSimulation(simState)
+      const { nextState } = stepSimulation(simState, appliedCustomSocialNorms)
       simState = nextState
       stats = computeStats(simState)
       statsHistory = appendTimeSeriesPoint(statsHistory, toTimeSeriesPoint(stats), MAX_CHART_POINTS)
@@ -98,7 +127,11 @@
   }
 
   function exportSettings(): void {
-    jsonText = toPrettyJson(editableParams)
+    jsonText = toPrettyJson({
+      version: 2,
+      parameters: editableParams,
+      customSocialNorms,
+    })
 
     const blob = new Blob([jsonText], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -113,12 +146,15 @@
 
   function importSettings(): void {
     try {
-      const parsed = parseJson<Partial<SimulationParameters>>(jsonText)
+      const parsed = parseJson<SimulationSettingsDocument>(jsonText)
+      const normalized = normalizeSettingsDocument(parsed)
+      validateCustomSocialNormCollection(normalized.customSocialNorms)
       const merged = validateParameters({
         ...DEFAULT_PARAMETERS,
         ...editableParams,
-        ...parsed,
-      })
+        ...normalized.parameters,
+      }, normalized.customSocialNorms)
+      customSocialNorms = cloneCustomNorms(normalized.customSocialNorms)
       editableParams = merged
       resetSimulation()
       feedback = 'Imported settings and re-initialized simulation.'
@@ -131,7 +167,125 @@
     jsonText = value
   }
 
-  $: hasPendingChanges = !areParametersEqual(editableParams, simState.params)
+  function makeCustomId(base: string): string {
+    const slug = base
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'custom-norm'
+    let candidate = slug
+    let suffix = 2
+    const existingIds = new Set(customSocialNorms.map((item) => item.id))
+    while (existingIds.has(candidate)) {
+      candidate = `${slug}-${suffix}`
+      suffix += 1
+    }
+    return candidate
+  }
+
+  function createBlankCustomNorm(): CustomSocialNormDefinition {
+    const id = makeCustomId('custom-norm')
+    return {
+      id,
+      name: 'Custom norm',
+      description: 'Editable user-defined social norm.',
+      assessmentRule: {
+        id: `${id}-assessment`,
+        name: 'Custom norm Assessment',
+        description: 'Editable assessment rule.',
+        table: {
+          'G-G-C': 'G',
+          'G-G-D': 'B',
+          'G-B-C': 'G',
+          'G-B-D': 'B',
+          'B-G-C': 'G',
+          'B-G-D': 'B',
+          'B-B-C': 'G',
+          'B-B-D': 'B',
+        },
+      },
+      actionRule: {
+        id: `${id}-action`,
+        name: 'Custom norm Action',
+        description: 'Editable action rule.',
+        table: {
+          'G-G': 'C',
+          'G-B': 'D',
+          'B-G': 'C',
+          'B-B': 'D',
+        },
+      },
+    }
+  }
+
+  function createCustomNorm(): void {
+    const created = createBlankCustomNorm()
+    customSocialNorms = [...customSocialNorms, created]
+    editableParams = { ...editableParams, socialNormId: created.id }
+    editingNormId = created.id
+  }
+
+  function duplicateSelectedNorm(): void {
+    const selected = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
+    const customId = makeCustomId(`${selected.id}-copy`)
+    const customName = `${selected.name} Copy`
+    const duplicated = selected.source === 'custom'
+      ? (() => {
+          const source = cloneCustomNorms(customSocialNorms).find((item) => item.id === selected.id)
+          if (!source) {
+            throw new Error(`Unknown social norm id: ${selected.id}`)
+          }
+          return {
+            ...source,
+            id: customId,
+            name: customName,
+            description: `Custom copy of ${selected.name}.`,
+            assessmentRule: {
+              ...source.assessmentRule,
+              id: `${customId}-assessment`,
+              name: `${customName} Assessment`,
+            },
+            actionRule: {
+              ...source.actionRule,
+              id: `${customId}-action`,
+              name: `${customName} Action`,
+            },
+          }
+        })()
+      : duplicatePresetAsCustom(selected.id, customId, customName)
+
+    customSocialNorms = [...customSocialNorms, duplicated]
+    editableParams = { ...editableParams, socialNormId: duplicated.id }
+    editingNormId = duplicated.id
+  }
+
+  function saveCustomNorm(updated: CustomSocialNormDefinition): void {
+    customSocialNorms = customSocialNorms.map((item) => (item.id === editingNormId ? updated : item))
+    editableParams = {
+      ...editableParams,
+      socialNormId: editableParams.socialNormId === editingNormId ? updated.id : editableParams.socialNormId,
+    }
+    editingNormId = updated.id
+  }
+
+  function deleteCustomNorm(id: string): void {
+    customSocialNorms = customSocialNorms.filter((item) => item.id !== id)
+    if (editableParams.socialNormId === id) {
+      editableParams = { ...editableParams, socialNormId: DEFAULT_PARAMETERS.socialNormId }
+    }
+    editingNormId = null
+  }
+
+  function editSelectedNorm(): void {
+    editingNormId = editableParams.socialNormId
+  }
+
+  $: socialNormOptions = listAvailableSocialNorms(customSocialNorms)
+  $: selectedNorm = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
+  $: editingNorm = editingNormId ? customSocialNorms.find((item) => item.id === editingNormId) ?? null : null
+  $: hasPendingChanges =
+    !areParametersEqual(editableParams, simState.params) ||
+    !areCustomNormCollectionsEqual(customSocialNorms, appliedCustomSocialNorms)
 
   onDestroy(() => {
     stopLoop()
@@ -155,7 +309,9 @@
     <div class="left-col">
       <ControlPanel
         params={editableParams}
-        socialNormPresets={SOCIAL_NORM_PRESETS}
+        socialNormOptions={socialNormOptions}
+        selectedNormDescription={selectedNorm.description}
+        selectedNormSource={selectedNorm.source}
         {hasPendingChanges}
         {jsonText}
         message={feedback}
@@ -163,7 +319,18 @@
         on:export={exportSettings}
         on:import={importSettings}
         on:jsonChange={(event) => onJsonChange(event.detail)}
+        on:createCustomNorm={createCustomNorm}
+        on:duplicateSelectedNorm={duplicateSelectedNorm}
+        on:editSelectedNorm={editSelectedNorm}
       />
+      {#if editingNorm}
+        <CustomNormEditor
+          norm={editingNorm}
+          on:save={(event) => saveCustomNorm(event.detail)}
+          on:delete={(event) => deleteCustomNorm(event.detail.id)}
+          on:cancel={() => (editingNormId = null)}
+        />
+      {/if}
     </div>
 
     <div class="right-col">

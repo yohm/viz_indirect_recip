@@ -1,4 +1,4 @@
-import type { Action, Reputation } from './types'
+import type { Action, AssessmentTable, Reputation } from './types'
 
 export interface NormAssessmentContext {
   observerViewOfDonor: Reputation
@@ -10,26 +10,28 @@ export interface NormDefinition {
   id: string
   name: string
   description: string
+  table: AssessmentTable
   assessDonor(context: NormAssessmentContext): Reputation
 }
 
-function createBinaryNorm(
+export function createNormFromTable(
   id: string,
   name: string,
   description: string,
-  table: Record<`${Reputation}-${Reputation}-${Action}`, Reputation>,
+  table: AssessmentTable,
 ): NormDefinition {
   return {
     id,
     name,
     description,
+    table,
     assessDonor(context) {
       return table[`${context.observerViewOfDonor}-${context.observerViewOfRecipient}-${context.realizedAction}`]
     },
   }
 }
 
-const IMAGE_SCORING = createBinaryNorm(
+const IMAGE_SCORING = createNormFromTable(
   'image-scoring',
   'Image Scoring',
   'Cooperation is Good and defection is Bad, independent of donor/recipient reputations.',
@@ -45,7 +47,7 @@ const IMAGE_SCORING = createBinaryNorm(
   },
 )
 
-const SHUNNING = createBinaryNorm(
+const SHUNNING = createNormFromTable(
   'shunning',
   'Shunning',
   'Shunning third-order assessment rule.',
@@ -61,7 +63,7 @@ const SHUNNING = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L1 = createBinaryNorm(
+const LEADING_EIGHT_L1 = createNormFromTable(
   'leading-eight-l1',
   'Leading Eight L1',
   'Assessment table from one of the eight cooperative third-order norms (L1).',
@@ -77,7 +79,7 @@ const LEADING_EIGHT_L1 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L2 = createBinaryNorm(
+const LEADING_EIGHT_L2 = createNormFromTable(
   'leading-eight-l2',
   'Leading Eight L2 (Standing)',
   'Assessment table for L2/standing.',
@@ -93,7 +95,7 @@ const LEADING_EIGHT_L2 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L3 = createBinaryNorm(
+const LEADING_EIGHT_L3 = createNormFromTable(
   'leading-eight-l3',
   'Leading Eight L3 (Simple Standing)',
   'Assessment table for L3/simple standing.',
@@ -109,7 +111,7 @@ const LEADING_EIGHT_L3 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L4 = createBinaryNorm(
+const LEADING_EIGHT_L4 = createNormFromTable(
   'leading-eight-l4',
   'Leading Eight L4',
   'Assessment table from one of the eight cooperative third-order norms (L4).',
@@ -125,7 +127,7 @@ const LEADING_EIGHT_L4 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L5 = createBinaryNorm(
+const LEADING_EIGHT_L5 = createNormFromTable(
   'leading-eight-l5',
   'Leading Eight L5',
   'Assessment table from one of the eight cooperative third-order norms (L5).',
@@ -141,7 +143,7 @@ const LEADING_EIGHT_L5 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L6 = createBinaryNorm(
+const LEADING_EIGHT_L6 = createNormFromTable(
   'leading-eight-l6',
   'Leading Eight L6 (Stern Judging)',
   'Assessment table for L6/stern judging.',
@@ -157,7 +159,7 @@ const LEADING_EIGHT_L6 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L7 = createBinaryNorm(
+const LEADING_EIGHT_L7 = createNormFromTable(
   'leading-eight-l7',
   'Leading Eight L7',
   'Assessment table from one of the eight cooperative third-order norms (L7).',
@@ -173,7 +175,7 @@ const LEADING_EIGHT_L7 = createBinaryNorm(
   },
 )
 
-const LEADING_EIGHT_L8 = createBinaryNorm(
+const LEADING_EIGHT_L8 = createNormFromTable(
   'leading-eight-l8',
   'Leading Eight L8 (Judging)',
   'Assessment table for L8/judging.',

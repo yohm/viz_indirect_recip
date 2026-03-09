@@ -1,5 +1,5 @@
-import { getSocialNormById } from './socialNormPresets'
-import type { SimulationParameters, SimulationState } from './types'
+import { resolveSocialNorm, validateCustomSocialNormCollection } from './socialNormCatalog'
+import type { CustomSocialNormDefinition, SimulationParameters, SimulationState } from './types'
 
 const DEFAULT_MAX_EVENT_LOG_SIZE = 50
 
@@ -16,8 +16,13 @@ export const DEFAULT_PARAMETERS: SimulationParameters = {
   maxEventLogSize: DEFAULT_MAX_EVENT_LOG_SIZE,
 }
 
-export function validateParameters(input: SimulationParameters): SimulationParameters {
+export function validateParameters(
+  input: SimulationParameters,
+  customNorms: CustomSocialNormDefinition[] = [],
+): SimulationParameters {
   const params = { ...input }
+
+  validateCustomSocialNormCollection(customNorms)
 
   if (params.assessmentMode !== 'private' && params.assessmentMode !== 'public') {
     throw new Error('assessmentMode must be either "private" or "public".')
@@ -44,7 +49,7 @@ export function validateParameters(input: SimulationParameters): SimulationParam
     throw new Error('maxEventLogSize must be an integer between 1 and 5000.')
   }
 
-  getSocialNormById(params.socialNormId)
+  resolveSocialNorm(params.socialNormId, customNorms)
 
   params.seed = params.seed >>> 0
   return params

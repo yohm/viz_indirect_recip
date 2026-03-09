@@ -1,10 +1,8 @@
-import { getActionRuleById } from './actionRules'
 import { appendEvent } from './events'
-import { getNormById } from './norms'
 import { createRng } from './rng'
-import { getSocialNormById } from './socialNormPresets'
+import { resolveSocialNorm } from './socialNormCatalog'
 import { COOPERATION_RATE_WINDOW } from './stats'
-import type { Action, InteractionEvent, ReputationChange, SimulationState } from './types'
+import type { Action, CustomSocialNormDefinition, InteractionEvent, ReputationChange, SimulationState } from './types'
 
 function chooseDistinctPair(numAgents: number, randomInt: (maxExclusive: number) => number): [number, number] {
   const donor = randomInt(numAgents)
@@ -34,11 +32,11 @@ export interface StepResult {
   event: InteractionEvent
 }
 
-export function stepSimulation(state: SimulationState): StepResult {
+export function stepSimulation(state: SimulationState, customNorms: CustomSocialNormDefinition[] = []): StepResult {
   const rng = createRng(state.rngState)
-  const socialNorm = getSocialNormById(state.params.socialNormId)
-  const norm = getNormById(socialNorm.assessmentRuleId)
-  const actionRule = getActionRuleById(socialNorm.actionRuleId)
+  const socialNorm = resolveSocialNorm(state.params.socialNormId, customNorms)
+  const norm = socialNorm.assessmentRule
+  const actionRule = socialNorm.actionRule
   const numAgents = state.params.numAgents
 
   const [donor, recipient] = chooseDistinctPair(numAgents, (limit) => rng.nextInt(limit))

@@ -2,6 +2,35 @@ export type Reputation = 'G' | 'B'
 
 export type Action = 'C' | 'D'
 
+export type AssessmentTableKey =
+  | 'G-G-C'
+  | 'G-G-D'
+  | 'G-B-C'
+  | 'G-B-D'
+  | 'B-G-C'
+  | 'B-G-D'
+  | 'B-B-C'
+  | 'B-B-D'
+
+export type ActionTableKey = 'G-G' | 'G-B' | 'B-G' | 'B-B'
+
+export type AssessmentTable = Record<AssessmentTableKey, Reputation>
+
+export type ActionTable = Record<ActionTableKey, Action>
+
+export const ASSESSMENT_TABLE_KEYS: AssessmentTableKey[] = [
+  'G-G-C',
+  'G-G-D',
+  'G-B-C',
+  'G-B-D',
+  'B-G-C',
+  'B-G-D',
+  'B-B-C',
+  'B-B-D',
+]
+
+export const ACTION_TABLE_KEYS: ActionTableKey[] = ['G-G', 'G-B', 'B-G', 'B-B']
+
 export type InitialReputationMode = 'all-good' | 'random'
 
 export type AssessmentMode = 'private' | 'public'
@@ -24,6 +53,28 @@ export interface DonorDecisionContext {
   recipient: number
   donorViewOfSelf: Reputation
   donorViewOfRecipient: Reputation
+}
+
+export interface CustomAssessmentRuleDefinition {
+  id: string
+  name: string
+  description: string
+  table: AssessmentTable
+}
+
+export interface CustomActionRuleDefinition {
+  id: string
+  name: string
+  description: string
+  table: ActionTable
+}
+
+export interface CustomSocialNormDefinition {
+  id: string
+  name: string
+  description: string
+  assessmentRule: CustomAssessmentRuleDefinition
+  actionRule: CustomActionRuleDefinition
 }
 
 export interface ReputationChange {

@@ -1,29 +1,31 @@
-import type { Action, DonorDecisionContext, Reputation } from './types'
+import type { Action, ActionTable, DonorDecisionContext } from './types'
 
 export interface ActionRuleDefinition {
   id: string
   name: string
   description: string
+  table: ActionTable
   decide(context: DonorDecisionContext): Action
 }
 
-function createActionRule(
+export function createActionRuleFromTable(
   id: string,
   name: string,
   description: string,
-  table: Record<`${Reputation}-${Reputation}`, Action>,
+  table: ActionTable,
 ): ActionRuleDefinition {
   return {
     id,
     name,
     description,
+    table,
     decide(context) {
       return table[`${context.donorViewOfSelf}-${context.donorViewOfRecipient}`]
     },
   }
 }
 
-const DISCRIMINATOR = createActionRule(
+const DISCRIMINATOR = createActionRuleFromTable(
   'discriminator',
   'Discriminator',
   'Cooperate with recipients seen as Good; defect against recipients seen as Bad.',
@@ -35,7 +37,7 @@ const DISCRIMINATOR = createActionRule(
   },
 )
 
-const LEADING_EIGHT_L1_L2 = createActionRule(
+const LEADING_EIGHT_L1_L2 = createActionRuleFromTable(
   'leading-eight-l1-l2',
   'Leading Eight L1/L2 Action',
   'Cooperate for (G,G), (B,G), and (B,B); defect for (G,B).',
