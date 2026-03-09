@@ -5,17 +5,21 @@
   import MatrixView from './components/MatrixView.svelte'
   import SimulationControls from './components/SimulationControls.svelte'
   import StatsPanel from './components/StatsPanel.svelte'
+  import TimeSeriesChart from './components/TimeSeriesChart.svelte'
   import { initializeSimulation } from './lib/sim/initialize'
   import { SOCIAL_NORM_PRESETS } from './lib/sim/socialNormPresets'
   import { DEFAULT_PARAMETERS, validateParameters } from './lib/sim/state'
-  import { computeStats } from './lib/sim/stats'
+  import { appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from './lib/sim/stats'
   import { stepSimulation } from './lib/sim/step'
-  import type { SimulationParameters, SimulationState } from './lib/sim/types'
+  import type { SimulationParameters, SimulationState, TimeSeriesPoint } from './lib/sim/types'
   import { parseJson, toPrettyJson } from './lib/utils/json'
+
+  const MAX_CHART_POINTS = 500
 
   let editableParams: SimulationParameters = { ...DEFAULT_PARAMETERS }
   let simState: SimulationState = initializeSimulation(validateParameters({ ...editableParams }))
   let stats = computeStats(simState)
+  let statsHistory: TimeSeriesPoint[] = [toTimeSeriesPoint(stats)]
   let running = false
   let loopHandle: ReturnType<typeof setInterval> | null = null
 
@@ -32,6 +36,7 @@
       editableParams = validated
       simState = initializeSimulation(validated)
       stats = computeStats(simState)
+      statsHistory = [toTimeSeriesPoint(stats)]
       feedback = `Initialized with seed ${validated.seed}.`
     } catch (error) {
       feedback = (error as Error).message
@@ -44,6 +49,7 @@
       const { nextState } = stepSimulation(simState)
       simState = nextState
       stats = computeStats(simState)
+      statsHistory = appendTimeSeriesPoint(statsHistory, toTimeSeriesPoint(stats), MAX_CHART_POINTS)
       feedback = ''
     } catch (error) {
       feedback = (error as Error).message
@@ -141,7 +147,10 @@
     </div>
 
     <div class="right-col">
-      <MatrixView imageMatrix={simState.imageMatrix} assessmentMode={simState.params.assessmentMode} />
+      <div class="right-top-grid">
+        <MatrixView imageMatrix={simState.imageMatrix} assessmentMode={simState.params.assessmentMode} />
+        <TimeSeriesChart history={statsHistory} />
+      </div>
       <EventLog events={simState.events} />
     </div>
   </div>

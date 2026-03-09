@@ -1,4 +1,4 @@
-import type { Reputation, SimulationState, SimulationStats } from './types'
+import type { Reputation, SimulationState, SimulationStats, TimeSeriesPoint } from './types'
 
 function countReputation(imageMatrix: Reputation[][], value: Reputation): number {
   let count = 0
@@ -21,4 +21,29 @@ export function computeStats(state: SimulationState): SimulationStats {
     interactionCount: state.interactionCount,
     cooperationCount: state.cooperationCount,
   }
+}
+
+export function toTimeSeriesPoint(stats: SimulationStats): TimeSeriesPoint {
+  return {
+    step: stats.step,
+    cooperationRate: stats.cooperationRate,
+    fractionGood: stats.fractionGood,
+  }
+}
+
+export function appendTimeSeriesPoint(
+  history: TimeSeriesPoint[],
+  point: TimeSeriesPoint,
+  maxPoints: number,
+): TimeSeriesPoint[] {
+  if (maxPoints < 1) {
+    throw new Error('maxPoints must be at least 1.')
+  }
+
+  const nextHistory = [...history, point]
+  if (nextHistory.length <= maxPoints) {
+    return nextHistory
+  }
+
+  return nextHistory.slice(nextHistory.length - maxPoints)
 }

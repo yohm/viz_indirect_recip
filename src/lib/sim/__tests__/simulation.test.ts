@@ -5,6 +5,7 @@ import { getNormById } from '../norms'
 import { createRng } from '../rng'
 import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
+import { appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
 import { stepSimulation } from '../step'
 import type { Reputation, SimulationState } from '../types'
 
@@ -163,6 +164,61 @@ describe('simulation step', () => {
     expect(event.assessor).toBe(0)
     expect(event.realizedAction).toBe('D')
     expect(donorColumn).toEqual(Array(params.numAgents).fill('B'))
+  })
+})
+
+describe('time series history', () => {
+  it('starts with the step 0 snapshot when initialized from current stats', () => {
+    const initial = initializeSimulation(makeParams())
+    const stats = computeStats(initial)
+
+    expect(toTimeSeriesPoint(stats)).toEqual({
+      step: 0,
+      cooperationRate: 0,
+      fractionGood: 1,
+    })
+  })
+
+  it('appends one point per step using the latest stats snapshot', () => {
+    const initial = initializeSimulation(
+      makeParams({
+        seed: 11,
+        numAgents: 8,
+        initialReputationMode: 'random',
+      }),
+    )
+    const firstPoint = toTimeSeriesPoint(computeStats(initial))
+    const { nextState } = stepSimulation(initial)
+    const latestStats = computeStats(nextState)
+
+    const history = appendTimeSeriesPoint([firstPoint], toTimeSeriesPoint(latestStats), 500)
+
+    expect(history).toHaveLength(2)
+    expect(history.at(-1)).toEqual({
+      step: latestStats.step,
+      cooperationRate: latestStats.cooperationRate,
+      fractionGood: latestStats.fractionGood,
+    })
+  })
+
+  it('keeps only the most recent 500 points', () => {
+    let history = [toTimeSeriesPoint(computeStats(initializeSimulation(makeParams())))]
+
+    for (let step = 1; step <= 500; step += 1) {
+      history = appendTimeSeriesPoint(
+        history,
+        {
+          step,
+          cooperationRate: step / 500,
+          fractionGood: 1 - step / 1000,
+        },
+        500,
+      )
+    }
+
+    expect(history).toHaveLength(500)
+    expect(history[0].step).toBe(1)
+    expect(history.at(-1)?.step).toBe(500)
   })
 })
 

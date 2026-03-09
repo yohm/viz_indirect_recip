@@ -52,6 +52,12 @@ export interface SimulationStats {
   cooperationCount: number
 }
 
+export interface TimeSeriesPoint {
+  step: number
+  cooperationRate: number
+  fractionGood: number
+}
+
 export interface SimulationState {
   params: SimulationParameters
   imageMatrix: Reputation[][]

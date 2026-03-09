@@ -38,6 +38,13 @@ h1 {
   align-content: start;
 }
 
+.right-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
 button {
   border: 1px solid #b7c4d3;
   border-radius: 6px;
@@ -53,6 +60,10 @@ button:hover {
 
 @media (max-width: 1000px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .right-top-grid {
     grid-template-columns: 1fr;
   }
 }
