@@ -1,9 +1,9 @@
-import type { CustomSocialNormDefinition, SimulationParameters } from '../sim/types'
+import type { CustomNormCode, SimulationParameters } from '../sim/types'
 
 export interface SimulationSettingsDocumentV2 {
   version: 2
   parameters: SimulationParameters
-  customSocialNorms: CustomSocialNormDefinition[]
+  customSocialNorms: CustomNormCode[]
 }
 
 export type SimulationSettingsDocument = SimulationParameters | SimulationSettingsDocumentV2

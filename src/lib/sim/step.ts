@@ -2,7 +2,7 @@ import { appendEvent } from './events'
 import { createRng } from './rng'
 import { resolveSocialNorm } from './socialNormCatalog'
 import { COOPERATION_RATE_WINDOW } from './stats'
-import type { Action, CustomSocialNormDefinition, InteractionEvent, ReputationChange, SimulationState } from './types'
+import type { Action, CustomNormCode, InteractionEvent, ReputationChange, SimulationState } from './types'
 
 function chooseDistinctPair(numAgents: number, randomInt: (maxExclusive: number) => number): [number, number] {
   const donor = randomInt(numAgents)
@@ -32,7 +32,7 @@ export interface StepResult {
   event: InteractionEvent
 }
 
-export function stepSimulation(state: SimulationState, customNorms: CustomSocialNormDefinition[] = []): StepResult {
+export function stepSimulation(state: SimulationState, customNorms: CustomNormCode[] = []): StepResult {
   const rng = createRng(state.rngState)
   const socialNorm = resolveSocialNorm(state.params.socialNormId, customNorms)
   const norm = socialNorm.assessmentRule

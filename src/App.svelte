@@ -8,6 +8,7 @@
   import StatsPanel from './components/StatsPanel.svelte'
   import TimeSeriesChart from './components/TimeSeriesChart.svelte'
   import { initializeSimulation } from './lib/sim/initialize'
+  import { normalizeCustomNormCode } from './lib/sim/customNormCode'
   import {
     duplicatePresetAsCustom,
     listAvailableSocialNorms,
@@ -17,14 +18,14 @@
   import { DEFAULT_PARAMETERS, validateParameters } from './lib/sim/state'
   import { appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from './lib/sim/stats'
   import { stepSimulation } from './lib/sim/step'
-  import type { CustomSocialNormDefinition, SimulationParameters, SimulationState, TimeSeriesPoint } from './lib/sim/types'
+  import type { CustomNormCode, SimulationParameters, SimulationState, TimeSeriesPoint } from './lib/sim/types'
   import { normalizeSettingsDocument, parseJson, toPrettyJson, type SimulationSettingsDocument } from './lib/utils/json'
 
   const MAX_CHART_POINTS = 500
 
   let editableParams: SimulationParameters = { ...DEFAULT_PARAMETERS }
-  let customSocialNorms: CustomSocialNormDefinition[] = []
-  let appliedCustomSocialNorms: CustomSocialNormDefinition[] = []
+  let customSocialNorms: CustomNormCode[] = []
+  let appliedCustomSocialNorms: CustomNormCode[] = []
   let simState: SimulationState = initializeSimulation(validateParameters({ ...editableParams }, customSocialNorms))
   let stats = computeStats(simState)
   let statsHistory: TimeSeriesPoint[] = [toTimeSeriesPoint(stats)]
@@ -34,20 +35,11 @@
   let feedback = ''
   let jsonText = ''
   let hasPendingChanges = false
-  let editingNormId: string | null = null
+  let editingCode: CustomNormCode | null = null
+  let editingOriginalCode: CustomNormCode | null = null
 
-  function cloneCustomNorms(norms: CustomSocialNormDefinition[]): CustomSocialNormDefinition[] {
-    return norms.map((norm) => ({
-      ...norm,
-      assessmentRule: {
-        ...norm.assessmentRule,
-        table: { ...norm.assessmentRule.table },
-      },
-      actionRule: {
-        ...norm.actionRule,
-        table: { ...norm.actionRule.table },
-      },
-    }))
+  function cloneCustomNorms(norms: CustomNormCode[]): CustomNormCode[] {
+    return norms.map((code) => normalizeCustomNormCode(code))
   }
 
   function areParametersEqual(a: SimulationParameters, b: SimulationParameters): boolean {
@@ -65,7 +57,7 @@
     )
   }
 
-  function areCustomNormCollectionsEqual(a: CustomSocialNormDefinition[], b: CustomSocialNormDefinition[]): boolean {
+  function areCustomNormCollectionsEqual(a: CustomNormCode[], b: CustomNormCode[]): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
   }
 
@@ -167,122 +159,73 @@
     jsonText = value
   }
 
-  function makeCustomId(base: string): string {
-    const slug = base
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'custom-norm'
-    let candidate = slug
-    let suffix = 2
-    const existingIds = new Set(customSocialNorms.map((item) => item.id))
-    while (existingIds.has(candidate)) {
-      candidate = `${slug}-${suffix}`
-      suffix += 1
+  function ensureUniqueCustomNorm(code: CustomNormCode, excludingCode: string | null = null): void {
+    const normalized = normalizeCustomNormCode(code)
+    const duplicate = customSocialNorms.some(
+      (item) => item === normalized && (excludingCode === null || item !== normalizeCustomNormCode(excludingCode)),
+    )
+    if (duplicate) {
+      throw new Error(`Custom norm code already exists: ${normalized}`)
     }
-    return candidate
   }
 
-  function createBlankCustomNorm(): CustomSocialNormDefinition {
-    const id = makeCustomId('custom-norm')
-    return {
-      id,
-      name: 'Custom norm',
-      description: 'Editable user-defined social norm.',
-      assessmentRule: {
-        id: `${id}-assessment`,
-        name: 'Custom norm Assessment',
-        description: 'Editable assessment rule.',
-        table: {
-          'G-G-C': 'G',
-          'G-G-D': 'B',
-          'G-B-C': 'G',
-          'G-B-D': 'B',
-          'B-G-C': 'G',
-          'B-G-D': 'B',
-          'B-B-C': 'G',
-          'B-B-D': 'B',
-        },
-      },
-      actionRule: {
-        id: `${id}-action`,
-        name: 'Custom norm Action',
-        description: 'Editable action rule.',
-        table: {
-          'G-G': 'C',
-          'G-B': 'D',
-          'B-G': 'C',
-          'B-B': 'D',
-        },
-      },
-    }
+  function openEditor(code: CustomNormCode, originalCode: CustomNormCode | null): void {
+    editingCode = normalizeCustomNormCode(code)
+    editingOriginalCode = originalCode ? normalizeCustomNormCode(originalCode) : null
   }
 
   function createCustomNorm(): void {
-    const created = createBlankCustomNorm()
-    customSocialNorms = [...customSocialNorms, created]
-    editableParams = { ...editableParams, socialNormId: created.id }
-    editingNormId = created.id
+    openEditor(duplicatePresetAsCustom('image-scoring'), null)
   }
 
   function duplicateSelectedNorm(): void {
     const selected = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
-    const customId = makeCustomId(`${selected.id}-copy`)
-    const customName = `${selected.name} Copy`
-    const duplicated = selected.source === 'custom'
-      ? (() => {
-          const source = cloneCustomNorms(customSocialNorms).find((item) => item.id === selected.id)
-          if (!source) {
-            throw new Error(`Unknown social norm id: ${selected.id}`)
-          }
-          return {
-            ...source,
-            id: customId,
-            name: customName,
-            description: `Custom copy of ${selected.name}.`,
-            assessmentRule: {
-              ...source.assessmentRule,
-              id: `${customId}-assessment`,
-              name: `${customName} Assessment`,
-            },
-            actionRule: {
-              ...source.actionRule,
-              id: `${customId}-action`,
-              name: `${customName} Action`,
-            },
-          }
-        })()
-      : duplicatePresetAsCustom(selected.id, customId, customName)
-
-    customSocialNorms = [...customSocialNorms, duplicated]
-    editableParams = { ...editableParams, socialNormId: duplicated.id }
-    editingNormId = duplicated.id
+    const duplicatedCode = selected.source === 'custom' ? selected.id : duplicatePresetAsCustom(selected.id)
+    openEditor(duplicatedCode, null)
   }
 
-  function saveCustomNorm(updated: CustomSocialNormDefinition): void {
-    customSocialNorms = customSocialNorms.map((item) => (item.id === editingNormId ? updated : item))
-    editableParams = {
-      ...editableParams,
-      socialNormId: editableParams.socialNormId === editingNormId ? updated.id : editableParams.socialNormId,
+  function saveCustomNorm(updatedCode: CustomNormCode): void {
+    try {
+      const normalized = normalizeCustomNormCode(updatedCode)
+      validateCustomSocialNormCollection([normalized])
+
+      if (editingOriginalCode === null) {
+        ensureUniqueCustomNorm(normalized)
+        customSocialNorms = [...customSocialNorms, normalized]
+      } else {
+        ensureUniqueCustomNorm(normalized, editingOriginalCode)
+        customSocialNorms = customSocialNorms.map((item) => (item === editingOriginalCode ? normalized : item))
+      }
+
+      editableParams = {
+        ...editableParams,
+        socialNormId: normalized,
+      }
+      editingCode = normalized
+      editingOriginalCode = normalized
+      feedback = `Saved custom norm ${normalized}.`
+    } catch (error) {
+      feedback = (error as Error).message
     }
-    editingNormId = updated.id
   }
 
-  function deleteCustomNorm(id: string): void {
-    customSocialNorms = customSocialNorms.filter((item) => item.id !== id)
-    if (editableParams.socialNormId === id) {
+  function deleteCustomNorm(code: CustomNormCode): void {
+    const normalized = normalizeCustomNormCode(code)
+    customSocialNorms = customSocialNorms.filter((item) => item !== normalized)
+    if (editableParams.socialNormId === normalized) {
       editableParams = { ...editableParams, socialNormId: DEFAULT_PARAMETERS.socialNormId }
     }
-    editingNormId = null
+    editingCode = null
+    editingOriginalCode = null
   }
 
   function editSelectedNorm(): void {
-    editingNormId = editableParams.socialNormId
+    openEditor(editableParams.socialNormId, editableParams.socialNormId)
   }
 
   $: socialNormOptions = listAvailableSocialNorms(customSocialNorms)
   $: selectedNorm = resolveSocialNorm(editableParams.socialNormId, customSocialNorms)
-  $: editingNorm = editingNormId ? customSocialNorms.find((item) => item.id === editingNormId) ?? null : null
+  $: selectedNormLabel = selectedNorm.source === 'custom' ? selectedNorm.id : selectedNorm.name
   $: hasPendingChanges =
     !areParametersEqual(editableParams, simState.params) ||
     !areCustomNormCollectionsEqual(customSocialNorms, appliedCustomSocialNorms)
@@ -310,7 +253,7 @@
       <ControlPanel
         params={editableParams}
         socialNormOptions={socialNormOptions}
-        selectedNormDescription={selectedNorm.description}
+        selectedNormDescription={selectedNormLabel}
         selectedNormSource={selectedNorm.source}
         {hasPendingChanges}
         {jsonText}
@@ -323,12 +266,15 @@
         on:duplicateSelectedNorm={duplicateSelectedNorm}
         on:editSelectedNorm={editSelectedNorm}
       />
-      {#if editingNorm}
+      {#if editingCode}
         <CustomNormEditor
-          norm={editingNorm}
+          code={editingCode}
           on:save={(event) => saveCustomNorm(event.detail)}
-          on:delete={(event) => deleteCustomNorm(event.detail.id)}
-          on:cancel={() => (editingNormId = null)}
+          on:delete={(event) => deleteCustomNorm(event.detail.code)}
+          on:cancel={() => {
+            editingCode = null
+            editingOriginalCode = null
+          }}
         />
       {/if}
     </div>

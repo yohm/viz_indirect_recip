@@ -2,54 +2,46 @@
   import { createEventDispatcher } from 'svelte'
   import ActionRuleTable from './ActionRuleTable.svelte'
   import AssessmentRuleTable from './AssessmentRuleTable.svelte'
-  import type { CustomSocialNormDefinition } from '../lib/sim/types'
+  import { decodeCustomNormCode, encodeCustomNormCode } from '../lib/sim/customNormCode'
+  import type { ActionTable, AssessmentTable, CustomNormCode } from '../lib/sim/types'
 
-  export let norm: CustomSocialNormDefinition
+  export let code: CustomNormCode
 
   const dispatch = createEventDispatcher<{
-    save: CustomSocialNormDefinition
-    delete: { id: string }
+    save: CustomNormCode
+    delete: { code: CustomNormCode }
     cancel: void
   }>()
 
-  let draft = cloneNorm(norm)
+  const initialDecoded = decodeCustomNormCode(code)
+  let assessmentTable: AssessmentTable = initialDecoded.assessmentTable
+  let actionTable: ActionTable = initialDecoded.actionTable
+  let currentCode = code
+  let lastLoadedCode = code
 
-  $: if (norm.id !== draft.id) {
-    draft = cloneNorm(norm)
+  $: if (code !== lastLoadedCode) {
+    const decoded = decodeCustomNormCode(code)
+    assessmentTable = decoded.assessmentTable
+    actionTable = decoded.actionTable
+    lastLoadedCode = code
   }
 
-  function cloneNorm(value: CustomSocialNormDefinition): CustomSocialNormDefinition {
-    return {
-      ...value,
-      assessmentRule: {
-        ...value.assessmentRule,
-        table: { ...value.assessmentRule.table },
-      },
-      actionRule: {
-        ...value.actionRule,
-        table: { ...value.actionRule.table },
-      },
-    }
-  }
+  $: currentCode = encodeCustomNormCode(assessmentTable, actionTable)
 
   function save(): void {
-    draft.assessmentRule.id = `${draft.id}-assessment`
-    draft.assessmentRule.name = `${draft.name} Assessment`
-    draft.actionRule.id = `${draft.id}-action`
-    draft.actionRule.name = `${draft.name} Action`
-    dispatch('save', cloneNorm(draft))
+    dispatch('save', currentCode)
   }
 
   function assessmentSummary(): string {
-    const justifiedDefection = draft.assessmentRule.table['G-B-D']
-    const helpingBadRecipient = draft.assessmentRule.table['G-B-C']
-    return `Assesses defection against bad recipients as ${justifiedDefection} and helping bad recipients as ${helpingBadRecipient}.`
+    const justifiedDefection = assessmentTable['G-B-D']
+    const helpingBadRecipient = assessmentTable['G-B-C']
+    return `Bad recipient への defection を ${justifiedDefection}、helping bad recipient を ${helpingBadRecipient} と評価します。`
   }
 
   function actionSummary(): string {
-    const againstBadRecipient = draft.actionRule.table['G-B']
-    const badSelfAgainstBadRecipient = draft.actionRule.table['B-B']
-    return `Chooses ${againstBadRecipient} against bad recipients when self-image is good, and ${badSelfAgainstBadRecipient} when both self and recipient are bad.`
+    const againstBadRecipient = actionTable['G-B']
+    const badSelfAgainstBadRecipient = actionTable['B-B']
+    return `Self=G, recipient=B では ${againstBadRecipient}、self=B, recipient=B では ${badSelfAgainstBadRecipient} を選びます。`
   }
 </script>
 
@@ -59,31 +51,21 @@
     <div class="button-row">
       <button type="button" on:click={() => dispatch('cancel')}>Close</button>
       <button type="button" on:click={save}>Save changes</button>
-      <button type="button" class="danger" on:click={() => dispatch('delete', { id: norm.id })}>Delete</button>
+      <button type="button" class="danger" on:click={() => dispatch('delete', { code })}>Delete</button>
     </div>
   </div>
 
-  <label>
-    Name
-    <input type="text" bind:value={draft.name} />
-  </label>
-
-  <label>
-    Identifier
-    <input type="text" bind:value={draft.id} />
-  </label>
-
-  <label>
-    Description
-    <textarea rows="3" bind:value={draft.description}></textarea>
-  </label>
+  <div class="code-box">
+    <span class="code-label">Norm code</span>
+    <code>{currentCode}</code>
+  </div>
 
   <section class="subsection">
     <div class="subsection-head">
       <h3>Assessment Rule</h3>
       <p>{assessmentSummary()}</p>
     </div>
-    <AssessmentRuleTable table={draft.assessmentRule.table} on:change={(event) => (draft.assessmentRule.table = event.detail)} />
+    <AssessmentRuleTable table={assessmentTable} on:change={(event) => (assessmentTable = event.detail)} />
   </section>
 
   <section class="subsection">
@@ -91,7 +73,7 @@
       <h3>Action Rule</h3>
       <p>{actionSummary()}</p>
     </div>
-    <ActionRuleTable table={draft.actionRule.table} on:change={(event) => (draft.actionRule.table = event.detail)} />
+    <ActionRuleTable table={actionTable} on:change={(event) => (actionTable = event.detail)} />
   </section>
 </section>
 
@@ -121,6 +103,29 @@
     margin: 0;
   }
 
+  .code-box {
+    display: grid;
+    gap: 0.25rem;
+    border: 1px solid #d9dee4;
+    border-radius: 10px;
+    background: #f8fbfd;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .code-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+    font-size: 1rem;
+    color: #102a43;
+  }
+
   .subsection {
     display: grid;
     gap: 0.7rem;
@@ -131,22 +136,6 @@
     font-size: 0.85rem;
     color: #475569;
     line-height: 1.5;
-  }
-
-  label {
-    display: grid;
-    gap: 0.25rem;
-    font-size: 0.9rem;
-  }
-
-  input,
-  textarea {
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #cfd8e3;
-    border-radius: 6px;
-    padding: 0.5rem;
-    font: inherit;
   }
 
   .danger {

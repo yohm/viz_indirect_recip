@@ -55,27 +55,7 @@ export interface DonorDecisionContext {
   donorViewOfRecipient: Reputation
 }
 
-export interface CustomAssessmentRuleDefinition {
-  id: string
-  name: string
-  description: string
-  table: AssessmentTable
-}
-
-export interface CustomActionRuleDefinition {
-  id: string
-  name: string
-  description: string
-  table: ActionTable
-}
-
-export interface CustomSocialNormDefinition {
-  id: string
-  name: string
-  description: string
-  assessmentRule: CustomAssessmentRuleDefinition
-  actionRule: CustomActionRuleDefinition
-}
+export type CustomNormCode = string
 
 export interface ReputationChange {
   observer: number

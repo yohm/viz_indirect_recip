@@ -1,5 +1,5 @@
 import { resolveSocialNorm, validateCustomSocialNormCollection } from './socialNormCatalog'
-import type { CustomSocialNormDefinition, SimulationParameters, SimulationState } from './types'
+import type { CustomNormCode, SimulationParameters, SimulationState } from './types'
 
 const DEFAULT_MAX_EVENT_LOG_SIZE = 50
 
@@ -18,7 +18,7 @@ export const DEFAULT_PARAMETERS: SimulationParameters = {
 
 export function validateParameters(
   input: SimulationParameters,
-  customNorms: CustomSocialNormDefinition[] = [],
+  customNorms: CustomNormCode[] = [],
 ): SimulationParameters {
   const params = { ...input }
 

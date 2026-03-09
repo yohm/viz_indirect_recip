@@ -8,11 +8,11 @@ import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
 import { COOPERATION_RATE_WINDOW, appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
 import { stepSimulation } from '../step'
-import type { CustomSocialNormDefinition, Reputation, SimulationState } from '../types'
+import type { CustomNormCode, Reputation, SimulationState } from '../types'
 
 function makeParams(
   overrides: Partial<typeof DEFAULT_PARAMETERS> = {},
-  customNorms: CustomSocialNormDefinition[] = [],
+  customNorms: CustomNormCode[] = [],
 ) {
   return validateParameters({ ...DEFAULT_PARAMETERS, ...overrides }, customNorms)
 }
@@ -172,40 +172,10 @@ describe('simulation step', () => {
   })
 
   it('supports stepping with a user-defined custom norm', () => {
-    const customNorm: CustomSocialNormDefinition = {
-      id: 'custom-test',
-      name: 'Custom Test',
-      description: 'Image scoring action with one modified assessment cell.',
-      assessmentRule: {
-        id: 'custom-test-assessment',
-        name: 'Custom Test Assessment',
-        description: '',
-        table: {
-          'G-G-C': 'G',
-          'G-G-D': 'B',
-          'G-B-C': 'B',
-          'G-B-D': 'G',
-          'B-G-C': 'G',
-          'B-G-D': 'B',
-          'B-B-C': 'B',
-          'B-B-D': 'G',
-        },
-      },
-      actionRule: {
-        id: 'custom-test-action',
-        name: 'Custom Test Action',
-        description: '',
-        table: {
-          'G-G': 'C',
-          'G-B': 'D',
-          'B-G': 'C',
-          'B-B': 'D',
-        },
-      },
-    }
+    const customNorm = 'GBBGGBBG-CDCD'
     const params = makeParams(
       {
-        socialNormId: customNorm.id,
+        socialNormId: customNorm,
         numAgents: 6,
         seed: 29,
         initialReputationMode: 'random',
@@ -215,7 +185,7 @@ describe('simulation step', () => {
 
     const initial = initializeSimulation(params)
     const result = stepSimulation(initial, [customNorm])
-    const resolved = resolveSocialNorm(customNorm.id, [customNorm])
+    const resolved = resolveSocialNorm(customNorm, [customNorm])
 
     expect(result.nextState.step).toBe(1)
     expect(resolved.source).toBe('custom')
