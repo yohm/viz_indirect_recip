@@ -45,6 +45,12 @@ h1 {
   align-items: start;
 }
 
+.right-side-stack {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
 button {
   border: 1px solid #b7c4d3;
   border-radius: 6px;

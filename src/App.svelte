@@ -142,14 +142,15 @@
         on:step={stepOnce}
         on:toggleRun={toggleRun}
       />
-
-      <StatsPanel {stats} />
     </div>
 
     <div class="right-col">
       <div class="right-top-grid">
         <MatrixView imageMatrix={simState.imageMatrix} assessmentMode={simState.params.assessmentMode} />
-        <TimeSeriesChart history={statsHistory} />
+        <div class="right-side-stack">
+          <TimeSeriesChart history={statsHistory} />
+          <StatsPanel {stats} />
+        </div>
       </div>
       <EventLog events={simState.events} />
     </div>
