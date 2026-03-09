@@ -52,7 +52,7 @@
   })
 </script>
 
-<section class="panel">
+<section class="panel matrix-panel">
   <h2>Image Matrix</h2>
   <div class="legend">
     <span><i class="good"></i> Good</span>
@@ -78,6 +78,11 @@
     border: 1px solid #d9dee4;
     border-radius: 10px;
     padding: 1rem;
+  }
+
+  .matrix-panel {
+    justify-self: start;
+    width: min(100%, 522px);
   }
 
   h2 {
@@ -116,7 +121,7 @@
   }
 
   .canvas-wrap {
-    width: min(100%, 490px);
+    width: 100%;
     aspect-ratio: 1 / 1;
     border: 1px solid #cfd8e3;
     border-radius: 6px;
