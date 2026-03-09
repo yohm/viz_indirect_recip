@@ -64,6 +64,7 @@ export interface SimulationState {
   step: number
   interactionCount: number
   cooperationCount: number
+  recentActions: Action[]
   rngState: number
   events: InteractionEvent[]
 }

@@ -1,5 +1,7 @@
 import type { Reputation, SimulationState, SimulationStats, TimeSeriesPoint } from './types'
 
+export const COOPERATION_RATE_WINDOW = 100
+
 function countReputation(imageMatrix: Reputation[][], value: Reputation): number {
   let count = 0
   for (const row of imageMatrix) {
@@ -13,10 +15,11 @@ function countReputation(imageMatrix: Reputation[][], value: Reputation): number
 export function computeStats(state: SimulationState): SimulationStats {
   const totalCells = state.params.numAgents * state.params.numAgents
   const goodCount = countReputation(state.imageMatrix, 'G')
+  const recentCooperationCount = state.recentActions.filter((action) => action === 'C').length
 
   return {
     step: state.step,
-    cooperationRate: state.interactionCount === 0 ? 0 : state.cooperationCount / state.interactionCount,
+    cooperationRate: state.recentActions.length === 0 ? 0 : recentCooperationCount / state.recentActions.length,
     fractionGood: totalCells === 0 ? 0 : goodCount / totalCells,
     interactionCount: state.interactionCount,
     cooperationCount: state.cooperationCount,

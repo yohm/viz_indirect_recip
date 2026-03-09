@@ -5,7 +5,7 @@ import { getNormById } from '../norms'
 import { createRng } from '../rng'
 import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
-import { appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
+import { COOPERATION_RATE_WINDOW, appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
 import { stepSimulation } from '../step'
 import type { Reputation, SimulationState } from '../types'
 
@@ -154,6 +154,7 @@ describe('simulation step', () => {
       step: 0,
       interactionCount: 0,
       cooperationCount: 0,
+      recentActions: [],
       rngState: params.seed,
       events: [],
     }
@@ -219,6 +220,41 @@ describe('time series history', () => {
     expect(history).toHaveLength(500)
     expect(history[0].step).toBe(1)
     expect(history.at(-1)?.step).toBe(500)
+  })
+})
+
+describe('cooperation rate window', () => {
+  it('uses the recent 100-step window instead of the cumulative interaction count', () => {
+    const initial = initializeSimulation(makeParams())
+    const recentActions = Array.from({ length: COOPERATION_RATE_WINDOW }, (_, index) => (index < 40 ? 'C' : 'D')) as (
+      | 'C'
+      | 'D'
+    )[]
+
+    const stats = computeStats({
+      ...initial,
+      interactionCount: 900,
+      cooperationCount: 700,
+      recentActions,
+    })
+
+    expect(stats.cooperationRate).toBe(40 / COOPERATION_RATE_WINDOW)
+  })
+
+  it('retains only the most recent 100 realized actions in state', () => {
+    let state = initializeSimulation(
+      makeParams({
+        socialNormId: 'image-scoring',
+        actionErrorProbability: 0,
+        observationProbability: 0,
+      }),
+    )
+
+    for (let index = 0; index < COOPERATION_RATE_WINDOW + 25; index += 1) {
+      state = stepSimulation(state).nextState
+    }
+
+    expect(state.recentActions).toHaveLength(COOPERATION_RATE_WINDOW)
   })
 })
 

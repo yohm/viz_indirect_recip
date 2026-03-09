@@ -3,6 +3,7 @@ import { appendEvent } from './events'
 import { getNormById } from './norms'
 import { createRng } from './rng'
 import { getSocialNormById } from './socialNormPresets'
+import { COOPERATION_RATE_WINDOW } from './stats'
 import type { Action, InteractionEvent, ReputationChange, SimulationState } from './types'
 
 function chooseDistinctPair(numAgents: number, randomInt: (maxExclusive: number) => number): [number, number] {
@@ -18,6 +19,14 @@ function flipAction(action: Action): Action {
 
 function flipReputation(reputation: 'G' | 'B'): 'G' | 'B' {
   return reputation === 'G' ? 'B' : 'G'
+}
+
+function appendRecentAction(actions: Action[], action: Action): Action[] {
+  const nextActions = [...actions, action]
+  if (nextActions.length <= COOPERATION_RATE_WINDOW) {
+    return nextActions
+  }
+  return nextActions.slice(nextActions.length - COOPERATION_RATE_WINDOW)
 }
 
 export interface StepResult {
@@ -124,6 +133,7 @@ export function stepSimulation(state: SimulationState): StepResult {
     step: state.step + 1,
     interactionCount: state.interactionCount + 1,
     cooperationCount: state.cooperationCount + (realizedAction === 'C' ? 1 : 0),
+    recentActions: appendRecentAction(state.recentActions, realizedAction),
     rngState: rng.getState(),
     events: appendEvent(state.events, event, state.params.maxEventLogSize),
   }

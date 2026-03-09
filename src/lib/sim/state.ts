@@ -55,6 +55,7 @@ export function cloneState(state: SimulationState): SimulationState {
     ...state,
     params: { ...state.params },
     imageMatrix: state.imageMatrix.map((row) => [...row]),
+    recentActions: [...state.recentActions],
     events: state.events.map((event) => ({
       ...event,
       observingAgents: [...event.observingAgents],

@@ -26,6 +26,7 @@ export function initializeSimulation(params: SimulationParameters): SimulationSt
     step: 0,
     interactionCount: 0,
     cooperationCount: 0,
+    recentActions: [],
     rngState: params.seed >>> 0,
     events: [],
   }

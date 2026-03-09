@@ -12,11 +12,10 @@
       <dd>{stats.step}</dd>
     </div>
     <div>
-      <dt>Interactions</dt>
-      <dd>{stats.interactionCount}</dd>
-    </div>
-    <div>
-      <dt>Cooperation rate</dt>
+      <dt>
+        Cooperation rate
+        <span class="subtle-label">last 100 steps</span>
+      </dt>
       <dd>{(stats.cooperationRate * 100).toFixed(1)}%</dd>
     </div>
     <div>
@@ -55,6 +54,16 @@
 
   dt {
     color: #4b5563;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: baseline;
+  }
+
+  .subtle-label {
+    color: #7b8794;
+    font-size: 0.78rem;
+    font-weight: 500;
   }
 
   dd {
