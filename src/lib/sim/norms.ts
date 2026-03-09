@@ -45,6 +45,22 @@ const IMAGE_SCORING = createBinaryNorm(
   },
 )
 
+const SHUNNING = createBinaryNorm(
+  'shunning',
+  'Shunning',
+  'Shunning third-order assessment rule.',
+  {
+    'G-G-C': 'G',
+    'G-G-D': 'B',
+    'G-B-C': 'B',
+    'G-B-D': 'B',
+    'B-G-C': 'G',
+    'B-G-D': 'B',
+    'B-B-C': 'B',
+    'B-B-D': 'B',
+  },
+)
+
 const LEADING_EIGHT_L1 = createBinaryNorm(
   'leading-eight-l1',
   'Leading Eight L1',
@@ -175,6 +191,7 @@ const LEADING_EIGHT_L8 = createBinaryNorm(
 
 export const NORM_PRESETS: NormDefinition[] = [
   IMAGE_SCORING,
+  SHUNNING,
   LEADING_EIGHT_L1,
   LEADING_EIGHT_L2,
   LEADING_EIGHT_L3,

@@ -121,6 +121,7 @@ Assessment rules are typed objects implementing `assessDonor(context)` with this
 - realized donor action
 
 Preset assessment rules are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). The canonical public names use Leading Eight identifiers where duplicates previously existed.
+This includes standalone presets such as `image-scoring` and `shunning`.
 
 ### Action-rule system
 
@@ -140,6 +141,7 @@ In this simulator, a social norm is a pair:
 - action rule
 
 Named social norms are declared in [src/lib/sim/socialNormPresets.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/socialNormPresets.ts) and selected via `socialNormId` in parameters.
+Available named presets include `image-scoring`, `shunning`, and the Leading Eight combinations.
 
 ### Leading Eight presets
 

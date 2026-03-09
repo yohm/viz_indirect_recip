@@ -80,6 +80,32 @@ describe('norms', () => {
     expect(whenDonorGood).toBe('G')
     expect(whenDonorBad).toBe('B')
   })
+
+  it('implements the shunning assessment table', () => {
+    const norm = getNormById('shunning')
+
+    expect(
+      norm.assessDonor({
+        observerViewOfDonor: 'G',
+        observerViewOfRecipient: 'B',
+        realizedAction: 'C',
+      }),
+    ).toBe('B')
+    expect(
+      norm.assessDonor({
+        observerViewOfDonor: 'B',
+        observerViewOfRecipient: 'G',
+        realizedAction: 'C',
+      }),
+    ).toBe('G')
+    expect(
+      norm.assessDonor({
+        observerViewOfDonor: 'B',
+        observerViewOfRecipient: 'B',
+        realizedAction: 'D',
+      }),
+    ).toBe('B')
+  })
 })
 
 describe('canonical IDs', () => {

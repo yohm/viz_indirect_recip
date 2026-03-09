@@ -15,6 +15,13 @@ export const SOCIAL_NORM_PRESETS: SocialNormDefinition[] = [
     actionRuleId: 'discriminator',
   },
   {
+    id: 'shunning',
+    name: 'Shunning',
+    description: 'Shunning assessment with discriminator action rule.',
+    assessmentRuleId: 'shunning',
+    actionRuleId: 'discriminator',
+  },
+  {
     id: 'leading-eight-l1',
     name: 'Leading Eight L1',
     description: 'Published L1 combination of action and assessment rules.',

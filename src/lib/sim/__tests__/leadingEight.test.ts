@@ -45,3 +45,18 @@ describe('leading eight presets', () => {
     }
   })
 })
+
+describe('standalone social norm presets', () => {
+  it('maps shunning to an existing norm and action rule', () => {
+    const shunning = getSocialNormById('shunning')
+    const norm = getNormById(shunning.assessmentRuleId)
+    const actionRule = getActionRuleById(shunning.actionRuleId)
+
+    expect(norm.id).toBe('shunning')
+    expect(actionRule.id).toBe('discriminator')
+  })
+
+  it('uses discriminator for shunning', () => {
+    expect(getSocialNormById('shunning').actionRuleId).toBe('discriminator')
+  })
+})
