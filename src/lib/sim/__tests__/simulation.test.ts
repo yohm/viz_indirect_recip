@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { getActionRuleById } from '../actionRules'
 import { initializeSimulation } from '../initialize'
 import { getNormById } from '../norms'
 import { createRng } from '../rng'
+import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
 import { stepSimulation } from '../step'
 
@@ -57,33 +59,11 @@ describe('simulation step', () => {
     expect(result.event.intendedAction).not.toBe(result.event.realizedAction)
   })
 
-  it('supports action rules that depend on self-image', () => {
-    const params = makeParams({
-      numAgents: 10,
-      seed: 123,
-      observationProbability: 0,
-      actionErrorProbability: 0,
-      assessmentErrorProbability: 0,
-      initialReputationMode: 'random',
-      socialNormId: 'self-conscious',
-    })
-
-    const initial = initializeSimulation(params)
-    const result = stepSimulation(initial)
-    const donor = result.event.donor
-    const recipient = result.event.recipient
-
-    const selfRep = initial.imageMatrix[donor][donor]
-    const recipientRep = initial.imageMatrix[donor][recipient]
-    const expectedAction = selfRep === 'B' ? 'D' : recipientRep === 'G' ? 'C' : 'D'
-
-    expect(result.event.intendedAction).toBe(expectedAction)
-  })
 })
 
 describe('norms', () => {
   it('supports third-order norm dependence on donor reputation input', () => {
-    const norm = getNormById('contrite-judging')
+    const norm = getNormById('leading-eight-l8')
 
     const whenDonorGood = norm.assessDonor({
       observerViewOfDonor: 'G',
@@ -99,5 +79,56 @@ describe('norms', () => {
 
     expect(whenDonorGood).toBe('G')
     expect(whenDonorBad).toBe('B')
+  })
+})
+
+describe('canonical IDs', () => {
+  it('uses discriminator as the canonical replacement for recipient-discriminator', () => {
+    const rule = getActionRuleById('discriminator')
+
+    expect(
+      rule.decide({
+        donor: 0,
+        recipient: 1,
+        donorViewOfSelf: 'G',
+        donorViewOfRecipient: 'G',
+      }),
+    ).toBe('C')
+    expect(
+      rule.decide({
+        donor: 0,
+        recipient: 1,
+        donorViewOfSelf: 'B',
+        donorViewOfRecipient: 'B',
+      }),
+    ).toBe('D')
+  })
+
+  it('keeps L3 and L6 as canonical social norm IDs', () => {
+    expect(getSocialNormById('leading-eight-l3').id).toBe('leading-eight-l3')
+    expect(getSocialNormById('leading-eight-l6').id).toBe('leading-eight-l6')
+  })
+
+  it('rejects removed legacy social norm IDs', () => {
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, socialNormId: 'stern-judging' })).toThrow(
+      'Unknown social norm id: stern-judging',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, socialNormId: 'simple-standing' })).toThrow(
+      'Unknown social norm id: simple-standing',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, socialNormId: 'contrite-judging' })).toThrow(
+      'Unknown social norm id: contrite-judging',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, socialNormId: 'self-conscious' })).toThrow(
+      'Unknown social norm id: self-conscious',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, socialNormId: 'self-confident' })).toThrow(
+      'Unknown social norm id: self-confident',
+    )
+  })
+
+  it('rejects removed action rule IDs', () => {
+    expect(() => getActionRuleById('self-conscious')).toThrow('Unknown action rule id: self-conscious')
+    expect(() => getActionRuleById('self-confident')).toThrow('Unknown action rule id: self-confident')
   })
 })

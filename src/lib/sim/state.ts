@@ -5,7 +5,7 @@ const DEFAULT_MAX_EVENT_LOG_SIZE = 200
 
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
-  socialNormId: 'stern-judging',
+  socialNormId: 'leading-eight-l6',
   observationProbability: 0.7,
   actionErrorProbability: 0.02,
   assessmentErrorProbability: 0.02,

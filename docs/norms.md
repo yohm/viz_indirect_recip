@@ -19,27 +19,6 @@ In this project, a **social norm** is defined as:
 Definition:
 - `C -> G`, `D -> B`, independent of donor/recipient reputations.
 
-### Simple Standing (`simple-standing`)
-Definition:
-- Cooperation is always `G`.
-- Defection against `G` recipient is `B`.
-- Defection against `B` recipient is `G`.
-- Independent of prior donor image.
-
-### Stern Judging (`stern-judging`)
-Definition:
-- `C` to `G` recipient -> `G`
-- `D` to `B` recipient -> `G`
-- `D` to `G` recipient -> `B`
-- `C` to `B` recipient -> `B`
-- Independent of prior donor image.
-
-### Contrite Judging (`contrite-judging`)
-Definition:
-- Same as stern judging except one donor-dependent case differs.
-- If observer sees donor as `B`, and donor defects against `B`, then update is `B` (stricter).
-- This is included as an explicit third-order example because donor image affects outcome.
-
 ## Leading Eight assessment rules (L1-L8)
 
 The simulator includes all eight named assessment tables as individual norms:
@@ -51,7 +30,7 @@ The simulator includes all eight named assessment tables as individual norms:
 - `leading-eight-l5`
 - `leading-eight-l6` (Stern Judging)
 - `leading-eight-l7`
-- `leading-eight-l8` (Judging)
+- `leading-eight-l8` (Judging; canonical replacement for the old `contrite-judging` label in this codebase)
 
 Each of these is implemented as a full third-order table over all 8 input combinations:
 
@@ -72,7 +51,7 @@ Leading Eight presets use one of two donor action rules:
 - `BG -> C`
 - `BB -> C`
 
-### L3-L8 action rule (`leading-eight-l3-l8`)
+### Discriminator (`discriminator`)
 - `GG -> C`
 - `GB -> D`
 - `BG -> C`
@@ -86,8 +65,15 @@ Named social norms are implemented as explicit pairs in `src/lib/sim/socialNormP
 
 Examples:
 
-- `stern-judging` = (`assessmentRuleId = stern-judging`, `actionRuleId = recipient-discriminator`)
-- `leading-eight-l6` = (`assessmentRuleId = leading-eight-l6`, `actionRuleId = leading-eight-l3-l8`)
+- `image-scoring` = (`assessmentRuleId = image-scoring`, `actionRuleId = discriminator`)
+- `leading-eight-l6` = (`assessmentRuleId = leading-eight-l6`, `actionRuleId = discriminator`)
+- `leading-eight-l8` = (`assessmentRuleId = leading-eight-l8`, `actionRuleId = discriminator`)
+
+## Canonical naming notes
+
+- `leading-eight-l3` is the canonical replacement for the old `simple-standing` name.
+- `leading-eight-l6` is the canonical replacement for the old `stern-judging` name.
+- `leading-eight-l8` is the canonical replacement for the old `contrite-judging` name.
 
 ## Where definitions live in code
 

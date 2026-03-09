@@ -34,4 +34,14 @@ describe('leading eight presets', () => {
     expect(normL1.assessDonor(context)).toBe('G')
     expect(normL2.assessDonor(context)).toBe('B')
   })
+
+  it('uses discriminator for L3-L8', () => {
+    const leadingEightL3ToL8 = SOCIAL_NORM_PRESETS.filter((item) =>
+      ['leading-eight-l3', 'leading-eight-l4', 'leading-eight-l5', 'leading-eight-l6', 'leading-eight-l7', 'leading-eight-l8'].includes(item.id),
+    )
+
+    for (const preset of leadingEightL3ToL8) {
+      expect(preset.actionRuleId).toBe('discriminator')
+    }
+  })
 })

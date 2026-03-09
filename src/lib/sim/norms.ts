@@ -45,54 +45,6 @@ const IMAGE_SCORING = createBinaryNorm(
   },
 )
 
-const SIMPLE_STANDING = createBinaryNorm(
-  'simple-standing',
-  'Simple Standing',
-  'Defection against Good is Bad, defection against Bad is Good; cooperation is Good.',
-  {
-    'G-G-C': 'G',
-    'G-G-D': 'B',
-    'G-B-C': 'G',
-    'G-B-D': 'G',
-    'B-G-C': 'G',
-    'B-G-D': 'B',
-    'B-B-C': 'G',
-    'B-B-D': 'G',
-  },
-)
-
-const STERN_JUDGING = createBinaryNorm(
-  'stern-judging',
-  'Stern Judging',
-  'Cooperate with Good and defect against Bad are Good; opposite pairings are Bad.',
-  {
-    'G-G-C': 'G',
-    'G-G-D': 'B',
-    'G-B-C': 'B',
-    'G-B-D': 'G',
-    'B-G-C': 'G',
-    'B-G-D': 'B',
-    'B-B-C': 'B',
-    'B-B-D': 'G',
-  },
-)
-
-const CONTRITE_JUDGING = createBinaryNorm(
-  'contrite-judging',
-  'Contrite Judging',
-  'Observer is stricter on already-Bad donors in some contexts (example third-order table).',
-  {
-    'G-G-C': 'G',
-    'G-G-D': 'B',
-    'G-B-C': 'B',
-    'G-B-D': 'G',
-    'B-G-C': 'G',
-    'B-G-D': 'B',
-    'B-B-C': 'B',
-    'B-B-D': 'B',
-  },
-)
-
 const LEADING_EIGHT_L1 = createBinaryNorm(
   'leading-eight-l1',
   'Leading Eight L1',
@@ -223,9 +175,6 @@ const LEADING_EIGHT_L8 = createBinaryNorm(
 
 export const NORM_PRESETS: NormDefinition[] = [
   IMAGE_SCORING,
-  SIMPLE_STANDING,
-  STERN_JUDGING,
-  CONTRITE_JUDGING,
   LEADING_EIGHT_L1,
   LEADING_EIGHT_L2,
   LEADING_EIGHT_L3,

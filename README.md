@@ -116,7 +116,7 @@ Assessment rules are typed objects implementing `assessDonor(context)` with this
 - observer's view of recipient
 - realized donor action
 
-Preset assessment rules are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). Add new rules by appending new `NormDefinition` objects.
+Preset assessment rules are declared in [src/lib/sim/norms.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/norms.ts). The canonical public names use Leading Eight identifiers where duplicates previously existed.
 
 ### Action-rule system
 
@@ -126,6 +126,7 @@ Action rules are typed objects implementing `decide(context)` where context incl
 - donor's view of recipient
 
 Presets are declared in [src/lib/sim/actionRules.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/actionRules.ts).
+`discriminator` is the canonical donor action rule used by Leading Eight L3-L8.
 
 ### Social norm system
 
@@ -140,6 +141,11 @@ Named social norms are declared in [src/lib/sim/socialNormPresets.ts](/Users/mur
 
 Published Leading Eight combinations are declared in [src/lib/sim/socialNormPresets.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/socialNormPresets.ts).
 In the UI, selecting a Leading Eight entry picks the paired assessment/action definition.
+Canonical naming notes:
+
+- `leading-eight-l3` is the canonical replacement for the old `simple-standing` label.
+- `leading-eight-l6` is the canonical replacement for the old `stern-judging` label.
+- `leading-eight-l8` is the canonical replacement for the old `contrite-judging` label.
 
 ### Determinism and reproducibility
 

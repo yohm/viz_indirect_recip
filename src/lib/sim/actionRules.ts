@@ -23,38 +23,14 @@ function createActionRule(
   }
 }
 
-const RECIPIENT_DISCRIMINATOR = createActionRule(
-  'recipient-discriminator',
-  'Recipient Discriminator',
+const DISCRIMINATOR = createActionRule(
+  'discriminator',
+  'Discriminator',
   'Cooperate with recipients seen as Good; defect against recipients seen as Bad.',
   {
     'G-G': 'C',
     'G-B': 'D',
     'B-G': 'C',
-    'B-B': 'D',
-  },
-)
-
-const SELF_CONSCIOUS = createActionRule(
-  'self-conscious',
-  'Self Conscious',
-  'When self-image is Bad, defect regardless of recipient; otherwise discriminate by recipient.',
-  {
-    'G-G': 'C',
-    'G-B': 'D',
-    'B-G': 'D',
-    'B-B': 'D',
-  },
-)
-
-const SELF_CONFIDENT = createActionRule(
-  'self-confident',
-  'Self Confident',
-  'When self-image is Good, cooperate regardless of recipient; when Bad, defect.',
-  {
-    'G-G': 'C',
-    'G-B': 'C',
-    'B-G': 'D',
     'B-B': 'D',
   },
 )
@@ -71,24 +47,9 @@ const LEADING_EIGHT_L1_L2 = createActionRule(
   },
 )
 
-const LEADING_EIGHT_L3_TO_L8 = createActionRule(
-  'leading-eight-l3-l8',
-  'Leading Eight L3-L8 Action',
-  'Cooperate for (G,G) and (B,G); defect for (G,B) and (B,B).',
-  {
-    'G-G': 'C',
-    'G-B': 'D',
-    'B-G': 'C',
-    'B-B': 'D',
-  },
-)
-
 export const ACTION_RULE_PRESETS: ActionRuleDefinition[] = [
-  RECIPIENT_DISCRIMINATOR,
-  SELF_CONSCIOUS,
-  SELF_CONFIDENT,
+  DISCRIMINATOR,
   LEADING_EIGHT_L1_L2,
-  LEADING_EIGHT_L3_TO_L8,
 ]
 
 export function getActionRuleById(actionRuleId: string): ActionRuleDefinition {
