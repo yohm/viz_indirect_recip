@@ -228,7 +228,12 @@
 
     <div class="right-col">
       <div class="right-top-grid">
-        <MatrixView imageMatrix={simState.imageMatrix} assessmentMode={simState.params.assessmentMode} />
+        <MatrixView
+          imageMatrix={simState.imageMatrix}
+          assessmentMode={simState.params.assessmentMode}
+          populationMode={simState.params.populationMode}
+          agentStrategies={simState.agentStrategies}
+        />
         <div class="right-side-stack">
           <TimeSeriesChart history={statsHistory} />
           <StatsPanel {stats} />

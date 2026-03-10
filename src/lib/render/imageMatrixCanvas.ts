@@ -5,6 +5,8 @@ export interface MatrixRenderOptions {
   badColor?: string
   borderColor?: string
   highlightColor?: string
+  subgroupLineColor?: string
+  subgroupBoundaries?: number[]
   selectedObserver?: number | null
   selectedTarget?: number | null
 }
@@ -14,6 +16,8 @@ const DEFAULT_OPTIONS: Required<Omit<MatrixRenderOptions, 'selectedObserver' | '
   badColor: '#c0392b',
   borderColor: '#d1d5db',
   highlightColor: '#f59e0b',
+  subgroupLineColor: '#0f172a',
+  subgroupBoundaries: [],
 }
 
 export interface MatrixHit {
@@ -73,6 +77,25 @@ export function drawImageMatrix(
     context.moveTo(0, y)
     context.lineTo(width, y)
     context.stroke()
+  }
+
+  if (opts.subgroupBoundaries.length > 0) {
+    context.strokeStyle = opts.subgroupLineColor
+    context.lineWidth = 2
+    for (const boundary of opts.subgroupBoundaries) {
+      const x = boundary * cellW
+      const y = boundary * cellH
+
+      context.beginPath()
+      context.moveTo(x, 0)
+      context.lineTo(x, height)
+      context.stroke()
+
+      context.beginPath()
+      context.moveTo(0, y)
+      context.lineTo(width, y)
+      context.stroke()
+    }
   }
 
   if (typeof options.selectedObserver === 'number') {
