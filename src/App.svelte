@@ -45,6 +45,7 @@
   function areParametersEqual(a: SimulationParameters, b: SimulationParameters): boolean {
     return (
       a.numAgents === b.numAgents &&
+      a.populationMode === b.populationMode &&
       a.socialNormId === b.socialNormId &&
       a.assessmentMode === b.assessmentMode &&
       a.observationProbability === b.observationProbability &&

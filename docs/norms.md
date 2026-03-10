@@ -63,6 +63,11 @@ Leading Eight presets use one of two donor action rules:
 
 Named social norms are implemented as explicit pairs in `src/lib/sim/socialNormPresets.ts`.
 
+The selected named social norm always acts as the **focal norm**:
+
+- in `monomorphic` mode, all agents use both its assessment rule and action rule
+- in `polymorphic` mode, only `focal` agents use both its assessment rule and action rule, while `ALLD` agents always defect and assess donors as `B`, and `ALLC` agents always cooperate and assess donors as `G`
+
 Examples:
 
 - `image-scoring` = (`assessmentRuleId = image-scoring`, `actionRuleId = discriminator`)

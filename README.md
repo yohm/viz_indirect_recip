@@ -9,6 +9,7 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 ## What the app does
 
 - Configures social norm and simulation parameters.
+- Supports toggling between monomorphic and polymorphic populations for `N ∈ {30, 60, 150}`.
 - Includes bundled **Leading Eight** social-norm presets (L1-L8).
 - Runs/pause/step/reset simulation with deterministic seeded randomness.
 - Visualizes the image matrix `imageMatrix[observer][target]` on an HTML canvas.
@@ -19,11 +20,16 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 ## Model assumptions (current MVP)
 
 - Binary reputations: `G` / `B`.
+- Population mode is selectable:
+  - `monomorphic`: all agents use the selected focal norm.
+  - `polymorphic`: the first third of agents are `focal`, the second third are `ALLD`, and the final third are `ALLC`.
 - One donor and one recipient sampled each step.
-- Donor action is selected by a pluggable `ActionRule(self_rep, recipient_rep)`.
+- `focal` donor action is selected by a pluggable `ActionRule(self_rep, recipient_rep)`.
+- `ALLD` donors always intend `D`; `ALLC` donors always intend `C`.
 - Action error can flip intended donor action.
 - Observers are sampled independently by observation probability.
-- Observers update only donor image via selected third-order norm.
+- `focal` observers update only donor image via the selected third-order norm.
+- `ALLD` observers always assess the donor as `B`; `ALLC` observers always assess the donor as `G`.
 - Assessment error can flip updated reputation.
 - Public assessment mode can use `agent[0]` as a fixed observer whose judgment is copied to all agents when observation occurs.
 
@@ -132,7 +138,7 @@ Action rules are typed objects implementing `decide(context)` where context incl
 - donor's view of recipient
 
 Presets are declared in [src/lib/sim/actionRules.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/actionRules.ts).
-`discriminator` is the canonical donor action rule used by Leading Eight L3-L8.
+`discriminator` is the canonical donor action rule used by Leading Eight L3-L8 and by the `focal` subpopulation when those norms are selected.
 
 ### Social norm system
 
@@ -142,6 +148,8 @@ In this simulator, a social norm is a pair:
 - action rule
 
 Named social norms are declared in [src/lib/sim/socialNormPresets.ts](/Users/murase/sandbox/viz_indirect_recip/src/lib/sim/socialNormPresets.ts) and selected via `socialNormId` in parameters.
+In monomorphic mode, the selected norm applies to all agents.
+In polymorphic mode, the selected norm is the focal norm applied only by `focal` agents.
 Available named presets include `image-scoring`, `shunning`, and the Leading Eight combinations.
 
 ### Leading Eight presets
@@ -182,7 +190,7 @@ Canvas drawing is centralized in [src/lib/render/imageMatrixCanvas.ts](/Users/mu
 ## Future extensions
 
 - Ternary reputations (`G`/`B`/`U`).
-- Alternative donor decision rules per agent type.
+- User-defined population composition beyond the fixed equal thirds.
 - Recipient and third-party updates in one interaction.
 - Public/private hybrid reputation layers.
 - Punishment costs/payoffs and evolutionary dynamics.

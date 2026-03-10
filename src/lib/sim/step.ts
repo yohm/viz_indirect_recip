@@ -1,4 +1,5 @@
 import { appendEvent } from './events'
+import { resolveDonorAssessment, resolveIntendedAction } from './population'
 import { createRng } from './rng'
 import { resolveSocialNorm } from './socialNormCatalog'
 import { COOPERATION_RATE_WINDOW } from './stats'
@@ -35,15 +36,14 @@ export interface StepResult {
 export function stepSimulation(state: SimulationState, customNorms: CustomNormCode[] = []): StepResult {
   const rng = createRng(state.rngState)
   const socialNorm = resolveSocialNorm(state.params.socialNormId, customNorms)
-  const norm = socialNorm.assessmentRule
-  const actionRule = socialNorm.actionRule
   const numAgents = state.params.numAgents
 
   const [donor, recipient] = chooseDistinctPair(numAgents, (limit) => rng.nextInt(limit))
+  const donorStrategy = state.agentStrategies[donor]
 
   const donorViewOfSelf = state.imageMatrix[donor][donor]
   const donorViewOfRecipient = state.imageMatrix[donor][recipient]
-  const intendedAction = actionRule.decide({
+  const intendedAction = resolveIntendedAction(donorStrategy, socialNorm, {
     donor,
     recipient,
     donorViewOfSelf,
@@ -62,7 +62,7 @@ export function stepSimulation(state: SimulationState, customNorms: CustomNormCo
       assessor = 0
       observingAgents.push(0)
 
-      let donorAssessment = norm.assessDonor({
+      let donorAssessment = resolveDonorAssessment(state.agentStrategies[0], socialNorm, {
         observerViewOfDonor: nextMatrix[0][donor],
         observerViewOfRecipient: nextMatrix[0][recipient],
         realizedAction,
@@ -91,7 +91,7 @@ export function stepSimulation(state: SimulationState, customNorms: CustomNormCo
 
       observingAgents.push(observer)
 
-      let donorAssessment = norm.assessDonor({
+      let donorAssessment = resolveDonorAssessment(state.agentStrategies[observer], socialNorm, {
         observerViewOfDonor: nextMatrix[observer][donor],
         observerViewOfRecipient: nextMatrix[observer][recipient],
         realizedAction,

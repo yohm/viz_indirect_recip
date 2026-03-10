@@ -2,6 +2,12 @@ export type Reputation = 'G' | 'B'
 
 export type Action = 'C' | 'D'
 
+export const ALLOWED_NUM_AGENTS = [30, 60, 150] as const
+
+export type AllowedNumAgents = (typeof ALLOWED_NUM_AGENTS)[number]
+
+export type AgentStrategy = 'focal' | 'alld' | 'allc'
+
 export type AssessmentTableKey =
   | 'G-G-C'
   | 'G-G-D'
@@ -35,8 +41,11 @@ export type InitialReputationMode = 'all-good' | 'random'
 
 export type AssessmentMode = 'private' | 'public'
 
+export type PopulationMode = 'monomorphic' | 'polymorphic'
+
 export interface SimulationParameters {
-  numAgents: number
+  numAgents: AllowedNumAgents
+  populationMode: PopulationMode
   socialNormId: string
   assessmentMode: AssessmentMode
   observationProbability: number
@@ -91,6 +100,7 @@ export interface TimeSeriesPoint {
 
 export interface SimulationState {
   params: SimulationParameters
+  agentStrategies: AgentStrategy[]
   imageMatrix: Reputation[][]
   step: number
   interactionCount: number

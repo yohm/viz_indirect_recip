@@ -42,6 +42,23 @@ i = 1, 2, ..., N
 
 Time proceeds in discrete interaction steps.
 
+In the current simulator, `N` is restricted to:
+
+```
+30, 60, 150
+```
+
+The simulator supports two population modes:
+
+- `monomorphic`: all agents are `focal`
+- `polymorphic`: the population is split deterministically by index into equal thirds
+
+```
+first third   : focal
+second third  : ALLD
+final third   : ALLC
+```
+
 ---
 
 # 3. Reputation System
@@ -201,6 +218,11 @@ This example corresponds to a strategy where agents cooperate with good recipien
 
 Different action rules correspond to different behavioral strategies.
 
+In the current simulator:
+
+- in `monomorphic` mode, all agents use the selected focal norm's action rule
+- in `polymorphic` mode, `focal` agents use the selected focal norm's action rule, `ALLD` agents always choose `D`, and `ALLC` agents always choose `C`
+
 ---
 
 ## Typical Strategy
@@ -299,6 +321,11 @@ The reputation update therefore depends on three pieces of information:
 1. donor reputation
 2. recipient reputation
 3. donor action
+
+In the current simulator:
+
+- in `monomorphic` mode, all observers use the selected focal norm's assessment rule
+- in `polymorphic` mode, `focal` observers use the selected focal norm's assessment rule, `ALLD` observers always assign `B`, and `ALLC` observers always assign `G`
 
 ---
 

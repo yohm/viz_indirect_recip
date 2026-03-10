@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getActionRuleById } from '../actionRules'
 import { initializeSimulation } from '../initialize'
 import { getNormById } from '../norms'
+import { buildAgentStrategies } from '../population'
 import { createRng } from '../rng'
 import { resolveSocialNorm } from '../socialNormCatalog'
 import { getSocialNormById } from '../socialNormPresets'
@@ -15,6 +16,26 @@ function makeParams(
   customNorms: CustomNormCode[] = [],
 ) {
   return validateParameters({ ...DEFAULT_PARAMETERS, ...overrides }, customNorms)
+}
+
+function findSeedForDonorStrategy(
+  strategy: 'focal' | 'alld' | 'allc',
+  overrides: Partial<typeof DEFAULT_PARAMETERS> = {},
+): { seed: number; donor: number; recipient: number } {
+  for (let seed = 0; seed < 100_000; seed += 1) {
+    const params = makeParams({ ...overrides, seed })
+    const initial = initializeSimulation(params)
+    const { event } = stepSimulation(initial)
+    if (initial.agentStrategies[event.donor] === strategy) {
+      return {
+        seed,
+        donor: event.donor,
+        recipient: event.recipient,
+      }
+    }
+  }
+
+  throw new Error(`Unable to find seed for donor strategy ${strategy}`)
 }
 
 describe('seeded rng', () => {
@@ -32,7 +53,7 @@ describe('seeded rng', () => {
 describe('simulation step', () => {
   it('is deterministic for same initial state', () => {
     const params = makeParams({
-      numAgents: 12,
+      numAgents: 30,
       seed: 99,
       observationProbability: 0.8,
       actionErrorProbability: 0.1,
@@ -51,7 +72,7 @@ describe('simulation step', () => {
 
   it('always flips intended action when action error probability is 1', () => {
     const params = makeParams({
-      numAgents: 6,
+      numAgents: 30,
       seed: 7,
       observationProbability: 1,
       actionErrorProbability: 1,
@@ -67,7 +88,7 @@ describe('simulation step', () => {
 
   it('keeps public assessment deterministic for same initial state', () => {
     const params = makeParams({
-      numAgents: 8,
+      numAgents: 30,
       seed: 19,
       observationProbability: 0.65,
       actionErrorProbability: 0.1,
@@ -87,7 +108,7 @@ describe('simulation step', () => {
 
   it('synchronizes the donor column in public assessment when agent 0 observes', () => {
     const params = makeParams({
-      numAgents: 5,
+      numAgents: 30,
       seed: 23,
       socialNormId: 'image-scoring',
       observationProbability: 1,
@@ -107,7 +128,7 @@ describe('simulation step', () => {
 
   it('leaves the donor column unchanged in public assessment when agent 0 does not observe', () => {
     const params = makeParams({
-      numAgents: 5,
+      numAgents: 30,
       seed: 31,
       socialNormId: 'image-scoring',
       observationProbability: 0,
@@ -128,7 +149,7 @@ describe('simulation step', () => {
 
   it('uses agent 0 views as the public assessment source', () => {
     const params = makeParams({
-      numAgents: 4,
+      numAgents: 30,
       seed: 17,
       socialNormId: 'leading-eight-l8',
       observationProbability: 1,
@@ -154,6 +175,7 @@ describe('simulation step', () => {
 
     const initial: SimulationState = {
       params,
+      agentStrategies: buildAgentStrategies(params.numAgents, params.populationMode),
       imageMatrix,
       step: 0,
       interactionCount: 0,
@@ -176,7 +198,7 @@ describe('simulation step', () => {
     const params = makeParams(
       {
         socialNormId: customNorm,
-        numAgents: 6,
+        numAgents: 30,
         seed: 29,
         initialReputationMode: 'random',
       },
@@ -208,7 +230,7 @@ describe('time series history', () => {
     const initial = initializeSimulation(
       makeParams({
         seed: 11,
-        numAgents: 8,
+        numAgents: 30,
         initialReputationMode: 'random',
       }),
     )
@@ -282,6 +304,286 @@ describe('cooperation rate window', () => {
   })
 })
 
+describe('polymorphic population', () => {
+  it('builds deterministic thirds for each allowed population size', () => {
+    expect(buildAgentStrategies(30, 'polymorphic')).toEqual([
+      ...Array(10).fill('focal'),
+      ...Array(10).fill('alld'),
+      ...Array(10).fill('allc'),
+    ])
+    expect(buildAgentStrategies(60, 'polymorphic')).toEqual([
+      ...Array(20).fill('focal'),
+      ...Array(20).fill('alld'),
+      ...Array(20).fill('allc'),
+    ])
+    expect(buildAgentStrategies(150, 'polymorphic')).toEqual([
+      ...Array(50).fill('focal'),
+      ...Array(50).fill('alld'),
+      ...Array(50).fill('allc'),
+    ])
+  })
+
+  it('stores the deterministic strategy assignment in simulation state', () => {
+    const initialA = initializeSimulation(makeParams({ numAgents: 60, populationMode: 'polymorphic' }))
+    const initialB = initializeSimulation(makeParams({ numAgents: 60, populationMode: 'polymorphic' }))
+
+    expect(initialA.agentStrategies).toEqual(buildAgentStrategies(60, 'polymorphic'))
+    expect(initialA.agentStrategies).toEqual(initialB.agentStrategies)
+  })
+
+  it('makes ALLD donors always intend D', () => {
+    const probe = findSeedForDonorStrategy('alld', {
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'image-scoring',
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'image-scoring',
+      seed: probe.seed,
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+
+    const { event } = stepSimulation(state)
+
+    expect(event.donor).toBe(probe.donor)
+    expect(state.agentStrategies[event.donor]).toBe('alld')
+    expect(event.intendedAction).toBe('D')
+  })
+
+  it('makes ALLC donors always intend C', () => {
+    const probe = findSeedForDonorStrategy('allc', {
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'shunning',
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'shunning',
+      seed: probe.seed,
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+
+    const { event } = stepSimulation(state)
+
+    expect(event.donor).toBe(probe.donor)
+    expect(state.agentStrategies[event.donor]).toBe('allc')
+    expect(event.intendedAction).toBe('C')
+  })
+
+  it('keeps focal donors on the selected focal norm action rule', () => {
+    const probe = findSeedForDonorStrategy('focal', {
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'leading-eight-l1',
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'leading-eight-l1',
+      seed: probe.seed,
+      actionErrorProbability: 0,
+      observationProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+    state.imageMatrix[probe.donor][probe.donor] = 'B'
+    state.imageMatrix[probe.donor][probe.recipient] = 'B'
+
+    const { event } = stepSimulation(state)
+
+    expect(event.donor).toBe(probe.donor)
+    expect(state.agentStrategies[event.donor]).toBe('focal')
+    expect(event.intendedAction).toBe('C')
+  })
+
+  it('makes ALLD observers always assign B', () => {
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'image-scoring',
+      seed: 0,
+      actionErrorProbability: 0,
+      observationProbability: 1,
+      assessmentErrorProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+    state.rngState = 0
+    state.imageMatrix = Array.from({ length: params.numAgents }, () =>
+      Array.from({ length: params.numAgents }, () => 'G' as Reputation),
+    )
+
+    const { nextState, event } = stepSimulation(state)
+    const alldObserver = 10
+
+    expect(state.agentStrategies[alldObserver]).toBe('alld')
+    expect(event.observingAgents).toContain(alldObserver)
+    expect(nextState.imageMatrix[alldObserver][event.donor]).toBe('B')
+  })
+
+  it('makes ALLC observers always assign G', () => {
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      socialNormId: 'image-scoring',
+      seed: 0,
+      actionErrorProbability: 0,
+      observationProbability: 1,
+      assessmentErrorProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+    state.rngState = 10
+    state.imageMatrix = Array.from({ length: params.numAgents }, () =>
+      Array.from({ length: params.numAgents }, () => 'B' as Reputation),
+    )
+
+    const { nextState, event } = stepSimulation(state)
+    const allcObserver = 20
+
+    expect(state.agentStrategies[allcObserver]).toBe('allc')
+    expect(event.observingAgents).toContain(allcObserver)
+    expect(nextState.imageMatrix[allcObserver][event.donor]).toBe('G')
+  })
+
+  it('still applies action error to ALLC and ALLD donors', () => {
+    const allcProbe = findSeedForDonorStrategy('allc', {
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      actionErrorProbability: 1,
+      observationProbability: 0,
+    })
+    const allcState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        seed: allcProbe.seed,
+        actionErrorProbability: 1,
+        observationProbability: 0,
+      }),
+    )
+
+    const alldProbe = findSeedForDonorStrategy('alld', {
+      numAgents: 30,
+      populationMode: 'polymorphic',
+      actionErrorProbability: 1,
+      observationProbability: 0,
+    })
+    const alldState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        seed: alldProbe.seed,
+        actionErrorProbability: 1,
+        observationProbability: 0,
+      }),
+    )
+
+    expect(stepSimulation(allcState).event).toMatchObject({
+      donor: allcProbe.donor,
+      intendedAction: 'C',
+      realizedAction: 'D',
+    })
+    expect(stepSimulation(alldState).event).toMatchObject({
+      donor: alldProbe.donor,
+      intendedAction: 'D',
+      realizedAction: 'C',
+    })
+  })
+
+  it('still applies assessment error after fixed observer rules', () => {
+    const alldState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        seed: 0,
+        actionErrorProbability: 0,
+        observationProbability: 1,
+        assessmentErrorProbability: 1,
+      }),
+    )
+    alldState.rngState = 0
+    alldState.imageMatrix = Array.from({ length: alldState.params.numAgents }, () =>
+      Array.from({ length: alldState.params.numAgents }, () => 'G' as Reputation),
+    )
+
+    const allcState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        seed: 0,
+        actionErrorProbability: 0,
+        observationProbability: 1,
+        assessmentErrorProbability: 1,
+      }),
+    )
+    allcState.rngState = 10
+    allcState.imageMatrix = Array.from({ length: allcState.params.numAgents }, () =>
+      Array.from({ length: allcState.params.numAgents }, () => 'B' as Reputation),
+    )
+
+    const alldResult = stepSimulation(alldState)
+    const allcResult = stepSimulation(allcState)
+
+    expect(alldResult.nextState.imageMatrix[10][alldResult.event.donor]).toBe('G')
+    expect(allcResult.nextState.imageMatrix[20][allcResult.event.donor]).toBe('B')
+  })
+})
+
+describe('monomorphic population', () => {
+  it('assigns all agents to the focal strategy', () => {
+    expect(buildAgentStrategies(30, 'monomorphic')).toEqual(Array(30).fill('focal'))
+    expect(buildAgentStrategies(60, 'monomorphic')).toEqual(Array(60).fill('focal'))
+    expect(buildAgentStrategies(150, 'monomorphic')).toEqual(Array(150).fill('focal'))
+  })
+
+  it('stores a homogeneous focal population in simulation state', () => {
+    const initial = initializeSimulation(makeParams({ numAgents: 60, populationMode: 'monomorphic' }))
+
+    expect(initial.agentStrategies).toEqual(buildAgentStrategies(60, 'monomorphic'))
+    expect(new Set(initial.agentStrategies)).toEqual(new Set(['focal']))
+  })
+
+  it('keeps all observers on the selected focal norm', () => {
+    const params = makeParams({
+      numAgents: 30,
+      populationMode: 'monomorphic',
+      socialNormId: 'image-scoring',
+      seed: 0,
+      actionErrorProbability: 0,
+      observationProbability: 1,
+      assessmentErrorProbability: 0,
+    })
+
+    const state = initializeSimulation(params)
+    state.imageMatrix = Array.from({ length: params.numAgents }, () =>
+      Array.from({ length: params.numAgents }, () => 'B' as Reputation),
+    )
+
+    const { nextState, event } = stepSimulation(state)
+
+    for (const observer of event.observingAgents) {
+      expect(state.agentStrategies[observer]).toBe('focal')
+      expect(nextState.imageMatrix[observer][event.donor]).toBe(event.realizedAction === 'C' ? 'G' : 'B')
+    }
+  })
+})
+
 describe('norms', () => {
   it('supports third-order norm dependence on donor reputation input', () => {
     const norm = getNormById('leading-eight-l8')
@@ -330,6 +632,29 @@ describe('norms', () => {
 })
 
 describe('canonical IDs', () => {
+  it('accepts only the supported fixed population sizes', () => {
+    expect(validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 30 }).numAgents).toBe(30)
+    expect(validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 60 }).numAgents).toBe(60)
+    expect(validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 150 }).numAgents).toBe(150)
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 12 as 30 })).toThrow(
+      'numAgents must be one of 30, 60, 150.',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 90 as 30 })).toThrow(
+      'numAgents must be one of 30, 60, 150.',
+    )
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, numAgents: 151 as 30 })).toThrow(
+      'numAgents must be one of 30, 60, 150.',
+    )
+  })
+
+  it('accepts only supported population modes', () => {
+    expect(validateParameters({ ...DEFAULT_PARAMETERS, populationMode: 'monomorphic' }).populationMode).toBe('monomorphic')
+    expect(validateParameters({ ...DEFAULT_PARAMETERS, populationMode: 'polymorphic' }).populationMode).toBe('polymorphic')
+    expect(() => validateParameters({ ...DEFAULT_PARAMETERS, populationMode: 'mixed' as 'monomorphic' })).toThrow(
+      'populationMode must be either "monomorphic" or "polymorphic".',
+    )
+  })
+
   it('rejects invalid assessment modes', () => {
     expect(() => validateParameters({ ...DEFAULT_PARAMETERS, assessmentMode: 'shared' as 'private' })).toThrow(
       'assessmentMode must be either "private" or "public".',

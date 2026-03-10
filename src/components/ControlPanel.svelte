@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import type { SocialNormListItem } from '../lib/sim/socialNormCatalog'
-  import type { AssessmentMode, InitialReputationMode, SimulationParameters } from '../lib/sim/types'
+  import { ALLOWED_NUM_AGENTS } from '../lib/sim/types'
+  import type { AssessmentMode, InitialReputationMode, PopulationMode, SimulationParameters } from '../lib/sim/types'
 
   export let params: SimulationParameters
   export let socialNormOptions: SocialNormListItem[] = []
@@ -29,6 +30,10 @@
   function updateAssessmentMode(value: string): void {
     update('assessmentMode', value as AssessmentMode)
   }
+
+  function updatePopulationMode(value: string): void {
+    update('populationMode', value as PopulationMode)
+  }
 </script>
 
 <section class:pending={hasPendingChanges} class="panel">
@@ -45,18 +50,32 @@
 
   <label>
     Number of agents (N)
-    <input
-      type="number"
-      min="2"
-      max="500"
-      step="1"
+    <select
       value={params.numAgents}
-      on:input={(event) => update('numAgents', Number((event.currentTarget as HTMLInputElement).value))}
-    />
+      on:change={(event) => update('numAgents', Number((event.currentTarget as HTMLSelectElement).value) as SimulationParameters['numAgents'])}
+    >
+      {#each ALLOWED_NUM_AGENTS as numAgents}
+        <option value={numAgents}>{numAgents}</option>
+      {/each}
+    </select>
   </label>
 
   <label>
-    Social norm (assessment rule + action rule)
+    Population mode
+    <select value={params.populationMode} on:change={(event) => updatePopulationMode((event.currentTarget as HTMLSelectElement).value)}>
+      <option value="monomorphic">Monomorphic</option>
+      <option value="polymorphic">Polymorphic</option>
+    </select>
+  </label>
+
+  {#if params.populationMode === 'polymorphic'}
+    <p class="composition-note">Population composition is fixed by index: first third focal, second third ALLD, final third ALLC.</p>
+  {:else}
+    <p class="composition-note">All agents use the selected focal norm as a homogeneous monomorphic population.</p>
+  {/if}
+
+  <label>
+    Focal social norm (assessment rule + action rule)
     <select
       value={params.socialNormId}
       on:change={(event) => update('socialNormId', (event.currentTarget as HTMLSelectElement).value)}
@@ -221,6 +240,13 @@
     padding: 0.65rem 0.75rem;
     font-size: 0.85rem;
     line-height: 1.4;
+  }
+
+  .composition-note {
+    margin: -0.15rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #475569;
   }
 
   label {

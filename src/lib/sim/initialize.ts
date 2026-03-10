@@ -1,4 +1,5 @@
 import { createRng } from './rng'
+import { buildAgentStrategies } from './population'
 import type { Reputation, SimulationParameters, SimulationState } from './types'
 
 function createMatrix(numAgents: number, fill: Reputation): Reputation[][] {
@@ -22,6 +23,7 @@ export function initializeImageMatrix(params: SimulationParameters): Reputation[
 export function initializeSimulation(params: SimulationParameters): SimulationState {
   return {
     params,
+    agentStrategies: buildAgentStrategies(params.numAgents, params.populationMode),
     imageMatrix: initializeImageMatrix(params),
     step: 0,
     interactionCount: 0,

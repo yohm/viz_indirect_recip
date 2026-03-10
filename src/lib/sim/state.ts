@@ -1,10 +1,12 @@
 import { resolveSocialNorm, validateCustomSocialNormCollection } from './socialNormCatalog'
+import { ALLOWED_NUM_AGENTS } from './types'
 import type { CustomNormCode, SimulationParameters, SimulationState } from './types'
 
 const DEFAULT_MAX_EVENT_LOG_SIZE = 50
 
 export const DEFAULT_PARAMETERS: SimulationParameters = {
   numAgents: 30,
+  populationMode: 'monomorphic',
   socialNormId: 'leading-eight-l6',
   assessmentMode: 'private',
   observationProbability: 1,
@@ -27,8 +29,11 @@ export function validateParameters(
   if (params.assessmentMode !== 'private' && params.assessmentMode !== 'public') {
     throw new Error('assessmentMode must be either "private" or "public".')
   }
-  if (!Number.isInteger(params.numAgents) || params.numAgents < 2 || params.numAgents > 500) {
-    throw new Error('numAgents must be an integer between 2 and 500.')
+  if (params.populationMode !== 'monomorphic' && params.populationMode !== 'polymorphic') {
+    throw new Error('populationMode must be either "monomorphic" or "polymorphic".')
+  }
+  if (!ALLOWED_NUM_AGENTS.includes(params.numAgents)) {
+    throw new Error(`numAgents must be one of ${ALLOWED_NUM_AGENTS.join(', ')}.`)
   }
   if (params.observationProbability < 0 || params.observationProbability > 1) {
     throw new Error('observationProbability must be within [0, 1].')
@@ -59,6 +64,7 @@ export function cloneState(state: SimulationState): SimulationState {
   return {
     ...state,
     params: { ...state.params },
+    agentStrategies: [...state.agentStrategies],
     imageMatrix: state.imageMatrix.map((row) => [...row]),
     recentActions: [...state.recentActions],
     events: state.events.map((event) => ({
