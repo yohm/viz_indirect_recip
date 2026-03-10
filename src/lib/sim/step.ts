@@ -2,8 +2,8 @@ import { appendEvent } from './events'
 import { resolveDonorAssessment, resolveIntendedAction } from './population'
 import { createRng } from './rng'
 import { resolveSocialNorm } from './socialNormCatalog'
-import { COOPERATION_RATE_WINDOW } from './stats'
-import type { Action, CustomNormCode, InteractionEvent, ReputationChange, SimulationState } from './types'
+import { ROLLING_WINDOW_SIZE } from './stats'
+import type { Action, CustomNormCode, GroupInteractionBuckets, GroupInteractionSummary, InteractionEvent, ReputationChange, SimulationState } from './types'
 
 function chooseDistinctPair(numAgents: number, randomInt: (maxExclusive: number) => number): [number, number] {
   const donor = randomInt(numAgents)
@@ -22,10 +22,54 @@ function flipReputation(reputation: 'G' | 'B'): 'G' | 'B' {
 
 function appendRecentAction(actions: Action[], action: Action): Action[] {
   const nextActions = [...actions, action]
-  if (nextActions.length <= COOPERATION_RATE_WINDOW) {
+  if (nextActions.length <= ROLLING_WINDOW_SIZE) {
     return nextActions
   }
-  return nextActions.slice(nextActions.length - COOPERATION_RATE_WINDOW)
+  return nextActions.slice(nextActions.length - ROLLING_WINDOW_SIZE)
+}
+
+function appendRecentInteractionSummaries(
+  history: GroupInteractionSummary[],
+  entry: GroupInteractionSummary,
+): GroupInteractionSummary[] {
+  const nextHistory = [...history, entry]
+  if (nextHistory.length <= ROLLING_WINDOW_SIZE) {
+    return nextHistory
+  }
+  return nextHistory.slice(nextHistory.length - ROLLING_WINDOW_SIZE)
+}
+
+function createEmptyBuckets(): GroupInteractionBuckets {
+  return {
+    focal: 0,
+    alld: 0,
+    allc: 0,
+  }
+}
+
+function computeInteractionSummary(
+  state: SimulationState,
+  donor: number,
+  recipient: number,
+  action: Action,
+): GroupInteractionSummary {
+  const summary: GroupInteractionSummary = {
+    donorSelections: createEmptyBuckets(),
+    donorCooperations: createEmptyBuckets(),
+    recipientSelections: createEmptyBuckets(),
+    recipientCooperations: createEmptyBuckets(),
+  }
+
+  summary.donorSelections[state.agentStrategies[donor]] += 1
+  summary.recipientSelections[state.agentStrategies[recipient]] += 1
+
+  if (action === 'D') {
+    return summary
+  }
+
+  summary.donorCooperations[state.agentStrategies[donor]] += 1
+  summary.recipientCooperations[state.agentStrategies[recipient]] += 1
+  return summary
 }
 
 export interface StepResult {
@@ -125,6 +169,8 @@ export function stepSimulation(state: SimulationState, customNorms: CustomNormCo
     reputationChanges,
   }
 
+  const interactionSummary = computeInteractionSummary(state, donor, recipient, realizedAction)
+
   const nextState: SimulationState = {
     ...state,
     imageMatrix: nextMatrix,
@@ -132,6 +178,7 @@ export function stepSimulation(state: SimulationState, customNorms: CustomNormCo
     interactionCount: state.interactionCount + 1,
     cooperationCount: state.cooperationCount + (realizedAction === 'C' ? 1 : 0),
     recentActions: appendRecentAction(state.recentActions, realizedAction),
+    recentInteractionSummaries: appendRecentInteractionSummaries(state.recentInteractionSummaries, interactionSummary),
     rngState: rng.getState(),
     events: appendEvent(state.events, event, state.params.maxEventLogSize),
   }

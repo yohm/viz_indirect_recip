@@ -57,6 +57,19 @@ export interface SimulationParameters {
   maxEventLogSize: number
 }
 
+export interface GroupInteractionBuckets {
+  focal: number
+  alld: number
+  allc: number
+}
+
+export interface GroupInteractionSummary {
+  donorSelections: GroupInteractionBuckets
+  donorCooperations: GroupInteractionBuckets
+  recipientSelections: GroupInteractionBuckets
+  recipientCooperations: GroupInteractionBuckets
+}
+
 export interface DonorDecisionContext {
   donor: number
   recipient: number
@@ -84,7 +97,8 @@ export interface InteractionEvent {
   reputationChanges: ReputationChange[]
 }
 
-export interface SimulationStats {
+export interface MonomorphicSimulationStats {
+  kind: 'monomorphic'
   step: number
   cooperationRate: number
   fractionGood: number
@@ -92,11 +106,33 @@ export interface SimulationStats {
   cooperationCount: number
 }
 
-export interface TimeSeriesPoint {
+export interface PolymorphicSimulationStats {
+  kind: 'polymorphic'
+  step: number
+  focalPayoff: number
+  alldPayoff: number
+  allcPayoff: number
+  interactionCount: number
+}
+
+export type SimulationStats = MonomorphicSimulationStats | PolymorphicSimulationStats
+
+export interface MonomorphicTimeSeriesPoint {
+  kind: 'monomorphic'
   step: number
   cooperationRate: number
   fractionGood: number
 }
+
+export interface PolymorphicTimeSeriesPoint {
+  kind: 'polymorphic'
+  step: number
+  focalPayoff: number
+  alldPayoff: number
+  allcPayoff: number
+}
+
+export type TimeSeriesPoint = MonomorphicTimeSeriesPoint | PolymorphicTimeSeriesPoint
 
 export interface SimulationState {
   params: SimulationParameters
@@ -106,6 +142,7 @@ export interface SimulationState {
   interactionCount: number
   cooperationCount: number
   recentActions: Action[]
+  recentInteractionSummaries: GroupInteractionSummary[]
   rngState: number
   events: InteractionEvent[]
 }

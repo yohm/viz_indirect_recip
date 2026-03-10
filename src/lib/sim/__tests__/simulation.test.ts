@@ -7,9 +7,9 @@ import { createRng } from '../rng'
 import { resolveSocialNorm } from '../socialNormCatalog'
 import { getSocialNormById } from '../socialNormPresets'
 import { DEFAULT_PARAMETERS, validateParameters } from '../state'
-import { COOPERATION_RATE_WINDOW, appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
+import { ROLLING_WINDOW_SIZE, appendTimeSeriesPoint, computeStats, toTimeSeriesPoint } from '../stats'
 import { stepSimulation } from '../step'
-import type { CustomNormCode, Reputation, SimulationState } from '../types'
+import type { CustomNormCode, Reputation, SimulationState, TimeSeriesPoint } from '../types'
 
 function makeParams(
   overrides: Partial<typeof DEFAULT_PARAMETERS> = {},
@@ -181,6 +181,7 @@ describe('simulation step', () => {
       interactionCount: 0,
       cooperationCount: 0,
       recentActions: [],
+      recentInteractionSummaries: [],
       rngState: params.seed,
       events: [],
     }
@@ -220,6 +221,7 @@ describe('time series history', () => {
     const stats = computeStats(initial)
 
     expect(toTimeSeriesPoint(stats)).toEqual({
+      kind: 'monomorphic',
       step: 0,
       cooperationRate: 0,
       fractionGood: 1,
@@ -242,19 +244,25 @@ describe('time series history', () => {
 
     expect(history).toHaveLength(2)
     expect(history.at(-1)).toEqual({
+      kind: 'monomorphic',
       step: latestStats.step,
-      cooperationRate: latestStats.cooperationRate,
-      fractionGood: latestStats.fractionGood,
+      ...(latestStats.kind === 'monomorphic'
+        ? {
+            cooperationRate: latestStats.cooperationRate,
+            fractionGood: latestStats.fractionGood,
+          }
+        : {}),
     })
   })
 
   it('keeps only the most recent 500 points', () => {
-    let history = [toTimeSeriesPoint(computeStats(initializeSimulation(makeParams())))]
+    let history: TimeSeriesPoint[] = [toTimeSeriesPoint(computeStats(initializeSimulation(makeParams())))]
 
     for (let step = 1; step <= 500; step += 1) {
       history = appendTimeSeriesPoint(
         history,
         {
+          kind: 'monomorphic',
           step,
           cooperationRate: step / 500,
           fractionGood: 1 - step / 1000,
@@ -272,7 +280,7 @@ describe('time series history', () => {
 describe('cooperation rate window', () => {
   it('uses the recent 100-step window instead of the cumulative interaction count', () => {
     const initial = initializeSimulation(makeParams())
-    const recentActions = Array.from({ length: COOPERATION_RATE_WINDOW }, (_, index) => (index < 40 ? 'C' : 'D')) as (
+    const recentActions = Array.from({ length: ROLLING_WINDOW_SIZE }, (_, index) => (index < 40 ? 'C' : 'D')) as (
       | 'C'
       | 'D'
     )[]
@@ -284,7 +292,11 @@ describe('cooperation rate window', () => {
       recentActions,
     })
 
-    expect(stats.cooperationRate).toBe(40 / COOPERATION_RATE_WINDOW)
+    expect(stats.kind).toBe('monomorphic')
+    if (stats.kind !== 'monomorphic') {
+      throw new Error('Expected monomorphic stats')
+    }
+    expect(stats.cooperationRate).toBe(40 / ROLLING_WINDOW_SIZE)
   })
 
   it('retains only the most recent 100 realized actions in state', () => {
@@ -296,11 +308,145 @@ describe('cooperation rate window', () => {
       }),
     )
 
-    for (let index = 0; index < COOPERATION_RATE_WINDOW + 25; index += 1) {
+    for (let index = 0; index < ROLLING_WINDOW_SIZE + 25; index += 1) {
       state = stepSimulation(state).nextState
     }
 
-    expect(state.recentActions).toHaveLength(COOPERATION_RATE_WINDOW)
+    expect(state.recentActions).toHaveLength(ROLLING_WINDOW_SIZE)
+  })
+})
+
+describe('polymorphic payoff stats', () => {
+  it('records donor and recipient cooperation counts for cooperative and defective interactions', () => {
+    const cooperativeState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        socialNormId: 'shunning',
+        seed: 10752,
+        actionErrorProbability: 0,
+        observationProbability: 0,
+      }),
+    )
+    const cooperativeResult = stepSimulation(cooperativeState)
+
+    expect(cooperativeResult.event.realizedAction).toBe('C')
+    expect(cooperativeResult.nextState.recentInteractionSummaries).toHaveLength(1)
+    expect(cooperativeResult.nextState.recentInteractionSummaries[0]).toEqual({
+      donorSelections: {
+        focal: 0,
+        alld: 0,
+        allc: 1,
+      },
+      donorCooperations: {
+        focal: 0,
+        alld: 0,
+        allc: 1,
+      },
+      recipientSelections: {
+        focal: 1,
+        alld: 0,
+        allc: 0,
+      },
+      recipientCooperations: {
+        focal: 1,
+        alld: 0,
+        allc: 0,
+      },
+    })
+
+    const defectiveState = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        socialNormId: 'image-scoring',
+        seed: 8222,
+        actionErrorProbability: 0,
+        observationProbability: 0,
+      }),
+    )
+    const defectiveResult = stepSimulation(defectiveState)
+
+    expect(defectiveResult.event.realizedAction).toBe('D')
+    expect(defectiveResult.nextState.recentInteractionSummaries[0]).toEqual({
+      donorSelections: {
+        focal: 0,
+        alld: 1,
+        allc: 0,
+      },
+      donorCooperations: {
+        focal: 0,
+        alld: 0,
+        allc: 0,
+      },
+      recipientSelections: {
+        focal: 0,
+        alld: 1,
+        allc: 0,
+      },
+      recipientCooperations: {
+        focal: 0,
+        alld: 0,
+        allc: 0,
+      },
+    })
+  })
+
+  it('computes payoff from recipient and donor cooperation probabilities', () => {
+    const initial = initializeSimulation(makeParams({ numAgents: 30, populationMode: 'polymorphic' }))
+    const stats = computeStats({
+      ...initial,
+      step: 2,
+      interactionCount: 2,
+      recentInteractionSummaries: [
+        {
+          donorSelections: { focal: 2, alld: 0, allc: 0 },
+          donorCooperations: { focal: 2, alld: 0, allc: 0 },
+          recipientSelections: { focal: 4, alld: 0, allc: 0 },
+          recipientCooperations: { focal: 4, alld: 0, allc: 0 },
+        },
+        {
+          donorSelections: { focal: 0, alld: 1, allc: 1 },
+          donorCooperations: { focal: 0, alld: 1, allc: 1 },
+          recipientSelections: { focal: 0, alld: 2, allc: 2 },
+          recipientCooperations: { focal: 0, alld: 2, allc: 2 },
+        },
+      ],
+    })
+
+    expect(stats).toEqual({
+      kind: 'polymorphic',
+      step: 2,
+      focalPayoff: 4,
+      alldPayoff: 4,
+      allcPayoff: 4,
+      interactionCount: 2,
+    })
+    expect(toTimeSeriesPoint(stats)).toEqual({
+      kind: 'polymorphic',
+      step: 2,
+      focalPayoff: 4,
+      alldPayoff: 4,
+      allcPayoff: 4,
+    })
+  })
+
+  it('retains only the most recent 100 interaction summaries in state', () => {
+    let state = initializeSimulation(
+      makeParams({
+        numAgents: 30,
+        populationMode: 'polymorphic',
+        socialNormId: 'shunning',
+        actionErrorProbability: 0,
+        observationProbability: 0,
+      }),
+    )
+
+    for (let index = 0; index < ROLLING_WINDOW_SIZE + 25; index += 1) {
+      state = stepSimulation(state).nextState
+    }
+
+    expect(state.recentInteractionSummaries).toHaveLength(ROLLING_WINDOW_SIZE)
   })
 })
 

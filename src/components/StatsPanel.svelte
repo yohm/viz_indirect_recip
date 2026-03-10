@@ -11,17 +11,41 @@
       <dt>Step</dt>
       <dd>{stats.step}</dd>
     </div>
-    <div>
-      <dt>
-        Cooperation rate
-        <span class="subtle-label">last 100 steps</span>
-      </dt>
-      <dd>{(stats.cooperationRate * 100).toFixed(1)}%</dd>
-    </div>
-    <div>
-      <dt>Fraction good</dt>
-      <dd>{(stats.fractionGood * 100).toFixed(1)}%</dd>
-    </div>
+    {#if stats.kind === 'monomorphic'}
+      <div>
+        <dt>
+          Cooperation rate
+          <span class="subtle-label">last 100 steps</span>
+        </dt>
+        <dd>{(stats.cooperationRate * 100).toFixed(1)}%</dd>
+      </div>
+      <div>
+        <dt>Fraction good</dt>
+        <dd>{(stats.fractionGood * 100).toFixed(1)}%</dd>
+      </div>
+    {:else}
+      <div>
+        <dt>
+          Focal payoff
+          <span class="subtle-label">5 x recv. coop prob. - donor coop prob., last 100 steps</span>
+        </dt>
+        <dd>{stats.focalPayoff.toFixed(2)}</dd>
+      </div>
+      <div>
+        <dt>
+          ALLD payoff
+          <span class="subtle-label">5 x recv. coop prob. - donor coop prob., last 100 steps</span>
+        </dt>
+        <dd>{stats.alldPayoff.toFixed(2)}</dd>
+      </div>
+      <div>
+        <dt>
+          ALLC payoff
+          <span class="subtle-label">5 x recv. coop prob. - donor coop prob., last 100 steps</span>
+        </dt>
+        <dd>{stats.allcPayoff.toFixed(2)}</dd>
+      </div>
+    {/if}
   </dl>
 </section>
 

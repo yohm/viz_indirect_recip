@@ -13,7 +13,9 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 - Includes bundled **Leading Eight** social-norm presets (L1-L8).
 - Runs/pause/step/reset simulation with deterministic seeded randomness.
 - Visualizes the image matrix `imageMatrix[observer][target]` on an HTML canvas.
-- Shows summary stats (step, cooperation rate, fraction good).
+- Shows summary stats that switch by population mode:
+  - monomorphic: step, cooperation rate, fraction good
+  - polymorphic: step, focal payoff, ALLD payoff, ALLC payoff
 - Displays a recent interaction event log.
 - Imports/exports parameter settings as JSON.
 
@@ -27,11 +29,13 @@ Live demo: [https://yohm.github.io/viz_indirect_recip/](https://yohm.github.io/v
 - `focal` donor action is selected by a pluggable `ActionRule(self_rep, recipient_rep)`.
 - `ALLD` donors always intend `D`; `ALLC` donors always intend `C`.
 - Action error can flip intended donor action.
+- Donation-game payoffs are fixed at `b = 5`, `c = 1`.
 - Observers are sampled independently by observation probability.
 - `focal` observers update only donor image via the selected third-order norm.
 - `ALLD` observers always assess the donor as `B`; `ALLC` observers always assess the donor as `G`.
 - Assessment error can flip updated reputation.
 - Public assessment mode can use `agent[0]` as a fixed observer whose judgment is copied to all agents when observation occurs.
+- In polymorphic mode, the time series and summary show `(average probability to receive cooperation as a recipient) x 5 - (average probability to cooperate as a donor)` over the last 100 interaction steps for `focal`, `ALLD`, and `ALLC`.
 
 ## Install and run
 

@@ -152,7 +152,12 @@ If the donor defects:
 no payoff change
 ```
 
-Tracking payoffs is optional in the simulator.
+In the current simulator, payoffs are used for polymorphic-mode summary statistics with fixed values:
+
+```
+b = 5
+c = 1
+```
 
 ---
 

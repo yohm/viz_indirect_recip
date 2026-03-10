@@ -17,6 +17,9 @@
 
   const cooperationColor = '#0f766e'
   const goodColor = '#c2410c'
+  const focalColor = '#1d4ed8'
+  const alldColor = '#b91c1c'
+  const allcColor = '#15803d'
 
   function xForStep(step: number, minStep: number, maxStep: number): number {
     if (minStep === maxStep) {
@@ -26,11 +29,20 @@
     return margin.left + ((step - minStep) / (maxStep - minStep)) * plotWidth
   }
 
-  function yForValue(value: number): number {
-    return margin.top + (1 - value) * plotHeight
+  function yForValue(value: number, minValue: number, maxValue: number): number {
+    if (minValue === maxValue) {
+      return margin.top + plotHeight / 2
+    }
+
+    return margin.top + ((maxValue - value) / (maxValue - minValue)) * plotHeight
   }
 
-  function buildLinePath(points: TimeSeriesPoint[], getValue: (point: TimeSeriesPoint) => number): string {
+  function buildLinePath(
+    points: TimeSeriesPoint[],
+    getValue: (point: TimeSeriesPoint) => number,
+    minValue: number,
+    maxValue: number,
+  ): string {
     if (points.length === 0) return ''
 
     const minStep = points[0].step
@@ -40,30 +52,83 @@
       .map((point, index) => {
         const command = index === 0 ? 'M' : 'L'
         const x = xForStep(point.step, minStep, maxStep)
-        const y = yForValue(getValue(point))
+        const y = yForValue(getValue(point), minValue, maxValue)
         return `${command} ${x.toFixed(2)} ${y.toFixed(2)}`
       })
       .join(' ')
   }
 
+  function describePoint(point: TimeSeriesPoint): string {
+    return point.kind === 'monomorphic'
+      ? 'Cooperation rate and good fraction over time, using a rolling average over the last 100 steps'
+      : 'Average payoffs over time, using the same rolling average over the last 100 steps shown in Summary'
+  }
+
+  function collectValues(points: TimeSeriesPoint[]): number[] {
+    return points.flatMap((point) =>
+      point.kind === 'monomorphic'
+        ? [point.cooperationRate, point.fractionGood]
+        : [point.focalPayoff, point.alldPayoff, point.allcPayoff],
+    )
+  }
+
   $: hasHistory = history.length > 0
   $: minStep = hasHistory ? history[0].step : 0
   $: maxStep = hasHistory ? history[history.length - 1].step : 0
-  $: cooperationPath = buildLinePath(history, (point) => point.cooperationRate)
-  $: goodPath = buildLinePath(history, (point) => point.fractionGood)
+  $: chartKind = hasHistory ? history[0].kind : 'monomorphic'
+  $: valueSeries = collectValues(history)
+  $: rawMinValue = valueSeries.length > 0 ? Math.min(...valueSeries) : 0
+  $: rawMaxValue = valueSeries.length > 0 ? Math.max(...valueSeries) : chartKind === 'monomorphic' ? 1 : 0
+  $: paddedMinValue =
+    chartKind === 'monomorphic'
+      ? 0
+      : rawMinValue === rawMaxValue
+        ? rawMinValue - 1
+        : rawMinValue - (rawMaxValue - rawMinValue) * 0.1
+  $: paddedMaxValue =
+    chartKind === 'monomorphic'
+      ? 1
+      : rawMinValue === rawMaxValue
+        ? rawMaxValue + 1
+        : rawMaxValue + (rawMaxValue - rawMinValue) * 0.1
+  $: cooperationPath =
+    chartKind === 'monomorphic' ? buildLinePath(history, (point) => point.kind === 'monomorphic' ? point.cooperationRate : 0, paddedMinValue, paddedMaxValue) : ''
+  $: goodPath =
+    chartKind === 'monomorphic' ? buildLinePath(history, (point) => point.kind === 'monomorphic' ? point.fractionGood : 0, paddedMinValue, paddedMaxValue) : ''
+  $: focalPath =
+    chartKind === 'polymorphic' ? buildLinePath(history, (point) => point.kind === 'polymorphic' ? point.focalPayoff : 0, paddedMinValue, paddedMaxValue) : ''
+  $: alldPath =
+    chartKind === 'polymorphic' ? buildLinePath(history, (point) => point.kind === 'polymorphic' ? point.alldPayoff : 0, paddedMinValue, paddedMaxValue) : ''
+  $: allcPath =
+    chartKind === 'polymorphic' ? buildLinePath(history, (point) => point.kind === 'polymorphic' ? point.allcPayoff : 0, paddedMinValue, paddedMaxValue) : ''
 </script>
 
 <section class="panel">
   <div class="header">
-    <h2>Time Series</h2>
+    <div class="title-block">
+      <h2>Time Series</h2>
+      <p class="note">
+        {#if chartKind === 'monomorphic'}
+          Each point shows the rolling average over the last 100 steps.
+        {:else}
+          Each point shows the same last-100-step window average used in Summary.
+        {/if}
+      </p>
+    </div>
     <div class="legend" aria-label="Chart legend">
-      <span><i style={`background:${cooperationColor}`}></i>Cooperation</span>
-      <span><i style={`background:${goodColor}`}></i>Good fraction</span>
+      {#if chartKind === 'monomorphic'}
+        <span><i style={`background:${cooperationColor}`}></i>Cooperation</span>
+        <span><i style={`background:${goodColor}`}></i>Good fraction</span>
+      {:else}
+        <span><i style={`background:${focalColor}`}></i>Focal payoff</span>
+        <span><i style={`background:${alldColor}`}></i>ALLD payoff</span>
+        <span><i style={`background:${allcColor}`}></i>ALLC payoff</span>
+      {/if}
     </div>
   </div>
 
   {#if hasHistory}
-    <svg viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} role="img" aria-label="Cooperation rate and good fraction over time">
+    <svg viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} role="img" aria-label={describePoint(history[0])}>
       <line class="axis" x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotHeight} />
       <line
         class="axis"
@@ -81,29 +146,63 @@
         x2={margin.left + plotWidth}
         y2={margin.top + plotHeight / 2}
       />
+      <line
+        class="grid"
+        x1={margin.left}
+        y1={margin.top + plotHeight}
+        x2={margin.left + plotWidth}
+        y2={margin.top + plotHeight}
+      />
 
-      <text class="tick" x={margin.left - 10} y={margin.top + 4}>1.0</text>
-      <text class="tick" x={margin.left - 10} y={margin.top + plotHeight / 2 + 4}>0.5</text>
-      <text class="tick" x={margin.left - 10} y={margin.top + plotHeight + 4}>0.0</text>
+      <text class="tick" x={margin.left - 10} y={margin.top + 4}>{paddedMaxValue.toFixed(chartKind === 'monomorphic' ? 1 : 2)}</text>
+      <text class="tick" x={margin.left - 10} y={margin.top + plotHeight / 2 + 4}>{((paddedMinValue + paddedMaxValue) / 2).toFixed(chartKind === 'monomorphic' ? 1 : 2)}</text>
+      <text class="tick" x={margin.left - 10} y={margin.top + plotHeight + 4}>{paddedMinValue.toFixed(chartKind === 'monomorphic' ? 1 : 2)}</text>
       <text class="tick" x={margin.left} y={viewBoxHeight - 8}>step {minStep}</text>
       <text class="tick tick-end" x={margin.left + plotWidth} y={viewBoxHeight - 8}>step {maxStep}</text>
 
       {#if history.length === 1}
-        <circle
-          cx={xForStep(history[0].step, minStep, maxStep)}
-          cy={yForValue(history[0].cooperationRate)}
-          r="4"
-          fill={cooperationColor}
-        />
-        <circle
-          cx={xForStep(history[0].step, minStep, maxStep)}
-          cy={yForValue(history[0].fractionGood)}
-          r="4"
-          fill={goodColor}
-        />
+        {#if history[0].kind === 'monomorphic'}
+          <circle
+            cx={xForStep(history[0].step, minStep, maxStep)}
+            cy={yForValue(history[0].cooperationRate, paddedMinValue, paddedMaxValue)}
+            r="4"
+            fill={cooperationColor}
+          />
+          <circle
+            cx={xForStep(history[0].step, minStep, maxStep)}
+            cy={yForValue(history[0].fractionGood, paddedMinValue, paddedMaxValue)}
+            r="4"
+            fill={goodColor}
+          />
+        {:else}
+          <circle
+            cx={xForStep(history[0].step, minStep, maxStep)}
+            cy={yForValue(history[0].focalPayoff, paddedMinValue, paddedMaxValue)}
+            r="4"
+            fill={focalColor}
+          />
+          <circle
+            cx={xForStep(history[0].step, minStep, maxStep)}
+            cy={yForValue(history[0].alldPayoff, paddedMinValue, paddedMaxValue)}
+            r="4"
+            fill={alldColor}
+          />
+          <circle
+            cx={xForStep(history[0].step, minStep, maxStep)}
+            cy={yForValue(history[0].allcPayoff, paddedMinValue, paddedMaxValue)}
+            r="4"
+            fill={allcColor}
+          />
+        {/if}
       {:else}
-        <path d={cooperationPath} fill="none" stroke={cooperationColor} stroke-width="3" stroke-linecap="round" />
-        <path d={goodPath} fill="none" stroke={goodColor} stroke-width="3" stroke-linecap="round" />
+        {#if chartKind === 'monomorphic'}
+          <path d={cooperationPath} fill="none" stroke={cooperationColor} stroke-width="3" stroke-linecap="round" />
+          <path d={goodPath} fill="none" stroke={goodColor} stroke-width="3" stroke-linecap="round" />
+        {:else}
+          <path d={focalPath} fill="none" stroke={focalColor} stroke-width="3" stroke-linecap="round" />
+          <path d={alldPath} fill="none" stroke={alldColor} stroke-width="3" stroke-linecap="round" />
+          <path d={allcPath} fill="none" stroke={allcColor} stroke-width="3" stroke-linecap="round" />
+        {/if}
       {/if}
     </svg>
   {:else}
@@ -127,9 +226,21 @@
     margin-bottom: 0.75rem;
   }
 
+  .title-block {
+    display: grid;
+    gap: 0.2rem;
+  }
+
   h2 {
     margin: 0;
     font-size: 1rem;
+  }
+
+  .note {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
   }
 
   .legend {
