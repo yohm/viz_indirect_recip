@@ -4,18 +4,14 @@ export interface MatrixRenderOptions {
   goodColor?: string
   badColor?: string
   borderColor?: string
-  highlightColor?: string
   subgroupLineColor?: string
   subgroupBoundaries?: number[]
-  selectedObserver?: number | null
-  selectedTarget?: number | null
 }
 
-const DEFAULT_OPTIONS: Required<Omit<MatrixRenderOptions, 'selectedObserver' | 'selectedTarget'>> = {
+const DEFAULT_OPTIONS: Required<MatrixRenderOptions> = {
   goodColor: '#2e8b57',
   badColor: '#c0392b',
   borderColor: '#d1d5db',
-  highlightColor: '#f59e0b',
   subgroupLineColor: '#0f172a',
   subgroupBoundaries: [],
 }
@@ -96,18 +92,6 @@ export function drawImageMatrix(
       context.lineTo(width, y)
       context.stroke()
     }
-  }
-
-  if (typeof options.selectedObserver === 'number') {
-    context.strokeStyle = opts.highlightColor
-    context.lineWidth = 2
-    context.strokeRect(0, options.selectedObserver * cellH, width, cellH)
-  }
-
-  if (typeof options.selectedTarget === 'number') {
-    context.strokeStyle = opts.highlightColor
-    context.lineWidth = 2
-    context.strokeRect(options.selectedTarget * cellW, 0, cellW, height)
   }
 }
 

@@ -10,8 +10,6 @@
 
   let canvas: HTMLCanvasElement | null = null
   let hovered: { row: number; col: number } | null = null
-  let selectedObserver: number | null = null
-  let selectedTarget: number | null = null
 
   const POLYMORPHIC_GROUPS = ['Focal', 'ALLD', 'ALLC'] as const
 
@@ -36,8 +34,6 @@
     if (!canvas) return
     drawImageMatrix(canvas, imageMatrix, {
       subgroupBoundaries: getSubgroupBoundaries(imageMatrix.length),
-      selectedObserver,
-      selectedTarget,
     })
   }
 
@@ -50,20 +46,9 @@
     hovered = null
   }
 
-  function onClick(event: MouseEvent): void {
-    if (!canvas) return
-    const hit = getMatrixCellAt(canvas, imageMatrix, event.clientX, event.clientY)
-    if (!hit) return
-    selectedObserver = hit.row
-    selectedTarget = hit.col
-    redraw()
-  }
-
   $: if (canvas) {
     // Make dependencies explicit so Svelte redraws on simulation updates.
     imageMatrix
-    selectedObserver
-    selectedTarget
     redraw()
   }
 
@@ -104,7 +89,7 @@
       </div>
     {/if}
     <div class="canvas-wrap">
-      <canvas bind:this={canvas} on:mousemove={onMouseMove} on:mouseleave={onMouseLeave} on:click={onClick}></canvas>
+      <canvas bind:this={canvas} on:mousemove={onMouseMove} on:mouseleave={onMouseLeave}></canvas>
     </div>
   </div>
   {#if hovered}
@@ -112,12 +97,6 @@
       observer {hovered.row}{#if strategyLabelFor(hovered.row)} ({strategyLabelFor(hovered.row)}){/if}
       -> target {hovered.col}{#if strategyLabelFor(hovered.col)} ({strategyLabelFor(hovered.col)}){/if}:
       {imageMatrix[hovered.row][hovered.col]}
-    </p>
-  {/if}
-  {#if selectedObserver !== null && selectedTarget !== null}
-    <p class="meta">
-      selected row {selectedObserver}{#if strategyLabelFor(selectedObserver)} ({strategyLabelFor(selectedObserver)}){/if},
-      column {selectedTarget}{#if strategyLabelFor(selectedTarget)} ({strategyLabelFor(selectedTarget)}){/if}
     </p>
   {/if}
 </section>
